@@ -94,6 +94,43 @@ h1 {
 .card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; }
 .card ul { color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.8; }
 .card .slides-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; margin-top: 1rem; }
+.qr-section {
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+.qr-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.qr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+}
+.qr-img {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 1rem;
+  display: block;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+.qr-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+.qr-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
 footer {
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -151,6 +188,22 @@ footer a { color: var(--primary); text-decoration: none; }
       </ul>
       <p class="slides-count">~16 slides &middot; 25 min content + 5 min Q&A</p>
     </a>
+  </div>
+
+  <div class="qr-section">
+    <h2 style="text-align:center; margin-bottom:1.5rem;">Scan to follow along</h2>
+    <div class="qr-cards">
+      <div class="qr-card">
+        <img src="assets/qr-slides.svg" alt="QR code for slides" class="qr-img">
+        <p class="qr-label">This talk</p>
+        <p class="qr-url">maeste.it/pycon2026-so101</p>
+      </div>
+      <div class="qr-card">
+        <img src="assets/qr-homepage.svg" alt="QR code for homepage" class="qr-img">
+        <p class="qr-label">Homepage</p>
+        <p class="qr-url">maeste.it</p>
+      </div>
+    </div>
   </div>
 
   <footer>
