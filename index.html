@@ -94,6 +94,24 @@ h1 {
 .card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; }
 .card ul { color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.8; }
 .card .slides-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; margin-top: 1rem; }
+.poll-section {
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+.poll-embed {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.poll-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
 .qr-section {
   max-width: 700px;
   width: 100%;
@@ -144,7 +162,15 @@ footer a { color: var(--primary); text-decoration: none; }
 <body>
   <h1>From LeRobot to Real Robots</h1>
   <p class="subtitle">What they don't tell you about making a robot arm grab things</p>
-  <p class="event-info">PyCon 2026 &middot; 30-minute talk &middot; Choose your version</p>
+  <p class="event-info">PyCon 2026 &middot; 30-minute talk &middot; Vote for your preferred version!</p>
+
+  <div class="poll-section">
+    <h2 style="text-align:center; margin-bottom:1rem;">Which talk do you want to hear?</h2>
+    <div class="poll-embed">
+      <iframe src="https://strawpoll.com/embed/BJnXVGKeXZv" style="width:100%; height:480px; border:none; border-radius:var(--radius);" allowfullscreen></iframe>
+    </div>
+    <p class="poll-hint">No account needed — just tap your choice!</p>
+  </div>
 
   <div class="versions">
     <a href="v1/index.html" class="card v1">
