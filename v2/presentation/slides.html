@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From LeRobot to Real Robots — PyCon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Design Tokens ===== */
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --surface-alt: #181830;
+      --border: #1e1e3a;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #4f8cff;
+      --primary-dim: rgba(79, 140, 255, 0.15);
+      --secondary: #a855f7;
+      --secondary-dim: rgba(168, 85, 247, 0.15);
+      --success: #22c55e;
+      --success-dim: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-dim: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-dim: rgba(239, 68, 68, 0.15);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 4px;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* ===== Reset ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+    }
+
+    /* ===== Slide Container ===== */
+    .deck {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 5rem;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .slide-inner {
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* ===== Typography ===== */
+    .slide h1 {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .slide h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+
+    .slide h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .slide p, .slide li {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--text-muted);
+    }
+
+    .slide ul, .slide ol {
+      list-style: none;
+      padding: 0;
+    }
+
+    .slide li {
+      padding-left: 1.5rem;
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.65rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--text) 0%, var(--primary) 50%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+    }
+
+    .text-primary { color: var(--primary); }
+    .text-secondary { color: var(--secondary); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger { color: var(--danger); }
+    .text-muted { color: var(--text-muted); }
+    .text-dim { color: var(--text-dim); }
+
+    .small { font-size: 0.85rem; }
+    .tiny { font-size: 0.75rem; }
+    .center { text-align: center; }
+
+    /* ===== Layout Helpers ===== */
+    .cols {
+      display: grid;
+      gap: 2rem;
+    }
+    .cols-2 { grid-template-columns: 1fr 1fr; }
+    .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .cols-23 { grid-template-columns: 2fr 3fr; }
+    .cols-32 { grid-template-columns: 3fr 2fr; }
+
+    .gap-1 { gap: 1rem; }
+    .gap-15 { gap: 1.5rem; }
+    .mt-1 { margin-top: 1rem; }
+    .mt-15 { margin-top: 1.5rem; }
+    .mt-2 { margin-top: 2rem; }
+    .mb-1 { margin-bottom: 1rem; }
+    .mb-05 { margin-bottom: 0.5rem; }
+
+    /* ===== Cards & Boxes ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .card-sm {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+    }
+
+    .card-accent {
+      border-left: 3px solid var(--primary);
+    }
+
+    .card-danger {
+      border-left: 3px solid var(--danger);
+      background: var(--danger-dim);
+    }
+
+    .card-success {
+      border-left: 3px solid var(--success);
+      background: var(--success-dim);
+    }
+
+    .card-warning {
+      border-left: 3px solid var(--warning);
+      background: var(--warning-dim);
+    }
+
+    .card-primary {
+      border-left: 3px solid var(--primary);
+      background: var(--primary-dim);
+    }
+
+    .card-secondary {
+      border-left: 3px solid var(--secondary);
+      background: var(--secondary-dim);
+    }
+
+    .highlight-box {
+      background: linear-gradient(135deg, var(--primary-dim), var(--secondary-dim));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      text-align: center;
+    }
+
+    /* ===== Code Blocks ===== */
+    code, .code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--surface-alt);
+      padding: 0.15em 0.4em;
+      border-radius: var(--radius-xs);
+      color: var(--primary);
+    }
+
+    pre {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      color: var(--text-muted);
+    }
+
+    pre .kw { color: var(--secondary); }
+    pre .fn { color: var(--primary); }
+    pre .str { color: var(--success); }
+    pre .cm { color: var(--text-dim); font-style: italic; }
+    pre .num { color: var(--warning); }
+    pre .op { color: var(--text-muted); }
+
+    /* ===== Tables ===== */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      border-bottom: 2px solid var(--border);
+      background: var(--surface);
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    /* ===== Badges ===== */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+    }
+
+    .badge-primary { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(79,140,255,0.25); }
+    .badge-secondary { background: var(--secondary-dim); color: var(--secondary); border: 1px solid rgba(168,85,247,0.25); }
+    .badge-success { background: var(--success-dim); color: var(--success); border: 1px solid rgba(34,197,94,0.25); }
+    .badge-warning { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
+    .badge-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); }
+
+    /* ===== Pipeline / Flow Diagrams ===== */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .pipeline-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.25rem;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .pipeline-step .label {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .pipeline-step .detail {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .pipeline-arrow {
+      color: var(--text-dim);
+      font-size: 1.4rem;
+      padding: 0 0.35rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== Big Number ===== */
+    .big-number {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .big-number.text-danger { color: var(--danger); }
+    .big-number.text-success { color: var(--success); }
+
+    /* ===== Speaker Notes ===== */
+    .speaker-notes {
+      display: none;
+    }
+
+    body.show-notes .speaker-notes {
+      display: block;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 30vh;
+      overflow-y: auto;
+      background: rgba(10, 10, 20, 0.95);
+      border-top: 2px solid var(--primary);
+      padding: 1rem 2rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      z-index: 1000;
+    }
+
+    body.show-notes .slide {
+      padding-bottom: 32vh;
+    }
+
+    .speaker-notes strong {
+      color: var(--primary);
+    }
+
+    /* ===== Controls ===== */
+    .controls {
+      position: fixed;
+      bottom: 1rem;
+      right: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 900;
+      user-select: none;
+    }
+
+    body.show-notes .controls {
+      bottom: calc(30vh + 1rem);
+    }
+
+    .controls button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .controls button:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* ===== Progress Bar ===== */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.3s ease;
+      z-index: 999;
+    }
+
+    /* ===== Keyboard Hints ===== */
+    .keyboard-hints {
+      position: fixed;
+      bottom: 1rem;
+      left: 1.5rem;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      z-index: 900;
+    }
+
+    body.show-notes .keyboard-hints {
+      bottom: calc(30vh + 1rem);
+    }
+
+    kbd {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.1rem 0.35rem;
+      margin: 0 0.15rem;
+      color: var(--text-muted);
+    }
+
+    /* ===== Slide-specific ===== */
+    .title-slide h1 {
+      font-size: 3.2rem;
+    }
+
+    .title-slide .subtitle {
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-bottom: 2rem;
+    }
+
+    .title-slide .meta {
+      font-size: 1rem;
+      color: var(--text-dim);
+    }
+
+    .title-slide .meta span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .icon-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .icon-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .icon-item .icon {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    /* Bug cards */
+    .bug-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      border-left: 3px solid var(--danger);
+    }
+
+    .bug-card .bug-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--danger);
+      margin-bottom: 0.35rem;
+    }
+
+    .bug-card .bug-problem {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .bug-card .bug-fix {
+      font-size: 0.82rem;
+      color: var(--success);
+    }
+
+    /* Comparison arrow */
+    .compare-arrow {
+      text-align: center;
+      font-size: 2rem;
+      color: var(--success);
+      padding: 0.5rem 0;
+    }
+
+    /* Placeholder */
+    .placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-dim);
+      font-size: 1rem;
+      font-style: italic;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .placeholder .placeholder-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+      font-style: normal;
+    }
+
+    /* Decision matrix */
+    .decision-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .decision-header {
+      font-weight: 700;
+      font-size: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .decision-item {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      padding-left: 1rem;
+      position: relative;
+    }
+
+    .decision-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55rem;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* Quote */
+    .quote {
+      font-size: 1.6rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.5;
+      padding: 1.5rem 2rem;
+      border-left: 3px solid var(--primary);
+      background: var(--primary-dim);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    /* SVG diagrams */
+    .diagram-svg {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 900px) {
+      .slide { padding: 2rem; }
+      .slide h1 { font-size: 2rem; }
+      .slide h2 { font-size: 1.5rem; }
+      .cols-2, .cols-3, .cols-23, .cols-32 { grid-template-columns: 1fr; }
+      .title-slide h1 { font-size: 2.2rem; }
+      .pipeline { flex-direction: column; }
+      .pipeline-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="deck" id="deck">
+
+    <!-- ==================== SLIDE 1: Title ==================== -->
+    <div class="slide title-slide" data-slide="1">
+      <div class="slide-inner center">
+        <p class="small text-primary mono mb-1" style="letter-spacing:0.1em;">PYCON 2026</p>
+        <h1 class="gradient-text">From LeRobot to Real Robots</h1>
+        <p class="subtitle">What They Don't Tell You About Making a Robot Arm Grab Things</p>
+        <div class="mt-2 meta">
+          <span>Stefano Maestri</span>
+          &nbsp;&middot;&nbsp;
+          <span class="text-primary">30 min</span>
+          &nbsp;&middot;&nbsp;
+          <span class="text-dim">Balanced Technical + Platform</span>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 0:00 - 0:45</strong><br>
+        Introduce yourself. "I'm Stefano, and six months ago I decided to teach a robot arm to pick up a block. How hard could it be?" Pause for effect. Set the tone: this is a war story with a happy ending.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 2: What is LeRobot + SO101 ==================== -->
+    <div class="slide" data-slide="2">
+      <div class="slide-inner">
+        <h2>What is <span class="text-primary">LeRobot</span> + <span class="text-secondary">SO-101</span></h2>
+        <div class="cols cols-2 mt-15">
+          <div class="card card-accent">
+            <h3 class="text-primary mb-05">LeRobot</h3>
+            <p class="small">Open-source PyTorch library by Hugging Face for real-world robotics. Datasets, pretrained policies, training pipelines, and hardware integration.</p>
+            <p class="small mt-1 text-dim mono">pip install lerobot</p>
+          </div>
+          <div class="card card-accent" style="border-left-color: var(--secondary);">
+            <h3 class="text-secondary mb-05">SO-101 Robot Arm</h3>
+            <p class="small">6-DOF 3D-printed robot arm. ~$300 in parts. Leader-follower teleoperation for data collection. Community-designed, open hardware.</p>
+          </div>
+        </div>
+        <div class="highlight-box mt-2">
+          <p style="font-size:1.1rem; color:var(--text);"><strong>The task:</strong> Pick up a colored block from a table and place it in a target zone.</p>
+          <p class="small text-dim mt-1">Sounds simple. It is not.</p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 0:45 - 2:00</strong><br>
+        Briefly explain LeRobot ecosystem. Mention Hugging Face backing. SO-101 is a community robot — affordable, open. The task is deceptively simple: pick up a block. Show of hands: who thinks this should take a weekend? (spoiler: it took months).
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 3: Hardware Reality Check ==================== -->
+    <div class="slide" data-slide="3">
+      <div class="slide-inner">
+        <h2>The Hardware <span class="text-danger">Reality Check</span></h2>
+        <p class="text-muted mb-1">Before you write ANY code, you fight hardware.</p>
+        <div class="cols cols-2 gap-15 mt-1">
+          <div class="card-sm card-danger">
+            <h3 style="font-size:0.9rem;" class="text-danger mb-05">Defective Parts</h3>
+            <p class="small">2 out of 12 servos arrived DOA. One 3D-printed bracket cracked during assembly. Lead time for replacements: 2 weeks.</p>
+          </div>
+          <div class="card-sm card-danger">
+            <h3 style="font-size:0.9rem;" class="text-danger mb-05">Wrong Motors</h3>
+            <p class="small">First batch shipped with STS3215 instead of STS3250. Different torque, different calibration profile. Subtle failures during recording.</p>
+          </div>
+          <div class="card-sm card-warning">
+            <h3 style="font-size:0.9rem;" class="text-warning mb-05">Firmware Needs Windows</h3>
+            <p class="small">Motor firmware update tool is Windows-only. Had to find a Windows machine, install drivers, flash each servo individually.</p>
+          </div>
+          <div class="card-sm card-warning">
+            <h3 style="font-size:0.9rem;" class="text-warning mb-05">Assembly: 3x Estimated Time</h3>
+            <p class="small">Documentation said 4 hours. Reality: 12+ hours. Wiring harness routing, cable management, mechanical alignment all underestimated.</p>
+          </div>
+        </div>
+        <div class="card-sm mt-15 center" style="background: var(--surface-alt);">
+          <p class="small text-dim">Total time from unboxing to first <code>teleoperate</code> command: <strong class="text-warning">~3 weeks</strong></p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 2:00 - 3:30</strong><br>
+        Quick hits. Don't dwell — the audience gets the point fast. "Every robotics tutorial starts at step 4. Steps 1-3 are: receive broken parts, find a Windows machine, and learn that 4 hours means 12." Get a laugh, move on.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 4: Software Pipeline ==================== -->
+    <div class="slide" data-slide="4">
+      <div class="slide-inner">
+        <h2>The Software <span class="text-primary">Pipeline</span></h2>
+
+        <div class="pipeline mt-2">
+          <div class="pipeline-step" style="border-color: var(--secondary);">
+            <div class="label text-secondary">Record</div>
+            <div class="detail">3 cameras, teleop</div>
+          </div>
+          <div class="pipeline-arrow">&rarr;</div>
+          <div class="pipeline-step" style="border-color: var(--primary);">
+            <div class="label text-primary">Train</div>
+            <div class="detail">ACT / SmolVLA / Pi0</div>
+          </div>
+          <div class="pipeline-arrow">&rarr;</div>
+          <div class="pipeline-step" style="border-color: var(--warning);">
+            <div class="label text-warning">Evaluate</div>
+            <div class="detail">30 Hz control loop</div>
+          </div>
+          <div class="pipeline-arrow">&rarr;</div>
+          <div class="pipeline-step" style="border-color: var(--danger);">
+            <div class="label text-danger">Debug</div>
+            <div class="detail">diagnose, repeat</div>
+          </div>
+        </div>
+
+        <div class="cols cols-3 gap-1 mt-2">
+          <div class="card-sm">
+            <h3 class="small text-secondary" style="font-weight:700;">Recording Gotchas</h3>
+            <ul class="small">
+              <li>3 USB cameras = bandwidth limit</li>
+              <li>Wayland breaks camera ordering</li>
+              <li>MJPEG vs YUYV matters</li>
+              <li>Leader arm IN camera frame = poison</li>
+            </ul>
+          </div>
+          <div class="card-sm">
+            <h3 class="small text-primary" style="font-weight:700;">Training Constraints</h3>
+            <ul class="small">
+              <li>GPU memory is the bottleneck</li>
+              <li>Batch size tuning is critical</li>
+              <li>2-4 hours per training run</li>
+              <li>No early stopping by default</li>
+            </ul>
+          </div>
+          <div class="card-sm">
+            <h3 class="small text-warning" style="font-weight:700;">Inference Loop</h3>
+            <ul class="small">
+              <li>30 Hz = 33ms per step</li>
+              <li>Camera read + model + actuate</li>
+              <li>CPU fallback = 8 Hz = failure</li>
+              <li>Async camera read helps</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 3:30 - 5:30</strong><br>
+        Walk through the pipeline visually. "This looks linear but you'll loop through it dozens of times." Mention: recording is where most subtle bugs enter. Training is where you wait. Evaluation is where you cry. Debugging is where you live.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 5: Policy Options ==================== -->
+    <div class="slide" data-slide="5">
+      <div class="slide-inner">
+        <h2>Policy Options <span class="text-muted">at a Glance</span></h2>
+        <div class="table-wrap mt-15">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="badge badge-primary">ACT</span></th>
+                <th><span class="badge badge-secondary">SmolVLA</span></th>
+                <th><span class="badge badge-warning">Pi0.5</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Type</strong></td>
+                <td>Action Chunking Transformer</td>
+                <td>Vision-Language-Action</td>
+                <td>Foundation Model</td>
+              </tr>
+              <tr>
+                <td><strong>Parameters</strong></td>
+                <td class="text-success">~80M</td>
+                <td class="text-warning">~500M</td>
+                <td class="text-danger">~3B</td>
+              </tr>
+              <tr>
+                <td><strong>GPU Memory</strong></td>
+                <td class="text-success">~4 GB</td>
+                <td class="text-warning">~12 GB</td>
+                <td class="text-danger">~24 GB+</td>
+              </tr>
+              <tr>
+                <td><strong>Training Time</strong></td>
+                <td class="text-success">2-3 hours</td>
+                <td class="text-warning">4-6 hours</td>
+                <td class="text-danger">8-12+ hours</td>
+              </tr>
+              <tr>
+                <td><strong>Language Control</strong></td>
+                <td class="text-danger">No</td>
+                <td class="text-success">Yes</td>
+                <td class="text-success">Yes</td>
+              </tr>
+              <tr>
+                <td><strong>Best For</strong></td>
+                <td>Single-task specialist</td>
+                <td>Multi-task with instructions</td>
+                <td>General manipulation</td>
+              </tr>
+              <tr>
+                <td><strong>My Pick</strong></td>
+                <td><span class="badge badge-success">Start here</span></td>
+                <td><span class="badge badge-primary">Level up</span></td>
+                <td><span class="badge badge-warning">Research</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small text-dim center mt-1">All times measured on RTX 5000 Ada 16GB. Your mileage will vary.</p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 5:30 - 7:00</strong><br>
+        Quick comparison. "Start with ACT. It's fast, it's proven, and when your data is bad you'll find out in 2 hours instead of 12." SmolVLA is the sweet spot for language-conditioned tasks. Pi0 is bleeding-edge — amazing results but needs serious hardware.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 6: Training on Consumer Hardware ==================== -->
+    <div class="slide" data-slide="6">
+      <div class="slide-inner">
+        <h2>Training on <span class="text-warning">Consumer Hardware</span></h2>
+        <div class="cols cols-23 gap-15">
+          <div>
+            <div class="card-sm mb-1">
+              <p class="small text-dim mono">Hardware</p>
+              <p><strong>RTX 5000 Ada</strong> &middot; 16 GB VRAM</p>
+            </div>
+            <div class="card-sm mb-1 card-danger">
+              <p class="small"><strong class="text-danger">OOM at batch=32</strong></p>
+              <p class="tiny text-muted">PyTorch gives no warning. Process just dies.</p>
+            </div>
+            <div class="card-sm card-success">
+              <p class="small"><strong class="text-success">Sweet spot: batch=16</strong></p>
+              <p class="tiny text-muted">Stable training, reasonable convergence.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="small text-muted mb-05">The Reality Loop</h3>
+            <!-- SVG Training Loop -->
+            <svg class="diagram-svg" viewBox="0 0 480 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+                </marker>
+              </defs>
+              <!-- Boxes -->
+              <rect x="10" y="20" width="120" height="50" rx="8" fill="#12121f" stroke="#a855f7" stroke-width="1.5"/>
+              <text x="70" y="50" text-anchor="middle" fill="#a855f7" font-family="Inter" font-size="13" font-weight="600">Record</text>
+              <text x="70" y="63" text-anchor="middle" fill="#64748b" font-family="Inter" font-size="9">50-100 episodes</text>
+
+              <rect x="180" y="20" width="120" height="50" rx="8" fill="#12121f" stroke="#4f8cff" stroke-width="1.5"/>
+              <text x="240" y="50" text-anchor="middle" fill="#4f8cff" font-family="Inter" font-size="13" font-weight="600">Train</text>
+              <text x="240" y="63" text-anchor="middle" fill="#64748b" font-family="Inter" font-size="9">2-4 hours</text>
+
+              <rect x="350" y="20" width="120" height="50" rx="8" fill="#12121f" stroke="#f59e0b" stroke-width="1.5"/>
+              <text x="410" y="50" text-anchor="middle" fill="#f59e0b" font-family="Inter" font-size="13" font-weight="600">Evaluate</text>
+              <text x="410" y="63" text-anchor="middle" fill="#64748b" font-family="Inter" font-size="9">10 trials</text>
+
+              <rect x="350" y="130" width="120" height="50" rx="8" fill="#12121f" stroke="#ef4444" stroke-width="1.5"/>
+              <text x="410" y="160" text-anchor="middle" fill="#ef4444" font-family="Inter" font-size="13" font-weight="600">Debug</text>
+              <text x="410" y="173" text-anchor="middle" fill="#64748b" font-family="Inter" font-size="9">find root cause</text>
+
+              <rect x="180" y="130" width="120" height="50" rx="8" fill="#12121f" stroke="#22c55e" stroke-width="1.5"/>
+              <text x="240" y="160" text-anchor="middle" fill="#22c55e" font-family="Inter" font-size="13" font-weight="600">Fix</text>
+              <text x="240" y="173" text-anchor="middle" fill="#64748b" font-family="Inter" font-size="9">data or config</text>
+
+              <!-- Arrows -->
+              <line x1="130" y1="45" x2="175" y2="45" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+              <line x1="300" y1="45" x2="345" y2="45" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+              <line x1="410" y1="75" x2="410" y2="125" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+              <line x1="350" y1="155" x2="305" y2="155" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+              <line x1="180" y1="155" x2="70" y2="155" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+              <line x1="70" y1="155" x2="70" y2="75" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrowhead)"/>
+
+              <!-- Loop label -->
+              <text x="80" y="120" fill="#64748b" font-family="JetBrains Mono" font-size="10" font-style="italic">repeat N times</text>
+
+              <!-- Time annotation -->
+              <rect x="140" y="220" width="200" height="40" rx="8" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="240" y="245" text-anchor="middle" fill="#f59e0b" font-family="Inter" font-size="12" font-weight="600">Each cycle: 2-4 hours minimum</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 7:00 - 8:30</strong><br>
+        "You will loop through this cycle at least 5-10 times before you get a working policy." Emphasize: each loop costs real time. This is why diagnostics matter so much — cutting one loop iteration saves hours.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 7: The Bugs (Combined) ==================== -->
+    <div class="slide" data-slide="7">
+      <div class="slide-inner">
+        <h2>The Bugs That <span class="text-danger">Don't Show Up</span> in Tutorials</h2>
+        <div class="cols cols-3 gap-1 mt-15">
+          <div class="bug-card">
+            <div class="bug-title">#1 Silent CPU Fallback</div>
+            <p class="bug-problem"><strong>Symptom:</strong> GPU utilization at 2%. Training "works" but policy is garbage.</p>
+            <p class="bug-fix"><strong>Fix:</strong> <code>policy.to("cuda")</code> explicitly after loading. Check <code>next(policy.parameters()).device</code>.</p>
+          </div>
+          <div class="bug-card">
+            <div class="bug-title">#2 Causal Confounding</div>
+            <p class="bug-problem"><strong>Symptom:</strong> Policy works perfectly in replay, fails on real robot.</p>
+            <p class="bug-fix"><strong>Fix:</strong> Remove leader arm from camera frame. It leaks future actions into observations.</p>
+          </div>
+          <div class="bug-card">
+            <div class="bug-title">#3 Distribution Shift</div>
+            <p class="bug-problem"><strong>Symptom:</strong> Works at 10am, fails at 3pm. Same setup, same code.</p>
+            <p class="bug-fix"><strong>Fix:</strong> Record across lighting conditions. Enable color augmentation (but not hue jitter for color tasks).</p>
+          </div>
+        </div>
+        <div class="highlight-box mt-15">
+          <p style="font-size:1rem; color:var(--text);">Common thread: <strong>the system never tells you something is wrong.</strong></p>
+          <p class="small text-dim">No errors. No warnings. Just a robot that doesn't work.</p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 8:30 - 11:00</strong><br>
+        Three bugs, one slide. Keep it punchy. For #1: "nvidia-smi showed 2% GPU. The model was on CPU. PyTorch didn't care." For #2: "The policy wasn't learning to grab — it was learning to follow the leader arm. Remove it from the camera frame." For #3: "Sunlight changes everything. Your dataset needs to be robust across conditions." The punchline: "No errors. No warnings. Just failure."
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 8: Calibration "Aha" Moment (CLIMAX) ==================== -->
+    <div class="slide" data-slide="8">
+      <div class="slide-inner">
+        <h2>The Calibration <span class="text-success">"Aha" Moment</span></h2>
+        <div class="cols cols-2 gap-15 mt-1">
+          <div>
+            <p class="text-muted mb-1">Running <code>compare_leader_follower.py</code> on our dataset revealed a systematic offset:</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Joint</th><th>Mean Drift</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>shoulder_pan</td><td class="text-success">0.3&deg;</td><td><span class="badge badge-success">OK</span></td></tr>
+                  <tr><td>shoulder_lift</td><td class="text-success">0.8&deg;</td><td><span class="badge badge-success">OK</span></td></tr>
+                  <tr><td>elbow_flex</td><td class="text-success">1.1&deg;</td><td><span class="badge badge-success">OK</span></td></tr>
+                  <tr><td>wrist_roll</td><td class="text-success">0.5&deg;</td><td><span class="badge badge-success">OK</span></td></tr>
+                  <tr><td style="font-weight:700;">wrist_flex</td><td class="text-danger" style="font-weight:900; font-size:1.1rem;">17.5&deg;</td><td><span class="badge badge-danger">DRIFT</span></td></tr>
+                  <tr><td>gripper</td><td class="text-success">0.2&deg;</td><td><span class="badge badge-success">OK</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="card-sm card-danger mb-1">
+              <p class="small"><strong>Before re-calibration</strong></p>
+              <p class="big-number text-danger center">0%</p>
+              <p class="tiny text-dim center">success rate on pick-and-place</p>
+            </div>
+            <div class="compare-arrow">&darr;</div>
+            <div class="card-sm card-success">
+              <p class="small"><strong>After re-calibration</strong></p>
+              <p class="big-number text-success center">80%</p>
+              <p class="tiny text-dim center">same policy, same data, re-calibrated</p>
+            </div>
+          </div>
+        </div>
+        <div class="quote mt-15">
+          "The data to find this was in our dataset <strong>ALL ALONG</strong>."
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 11:00 - 14:00</strong><br>
+        THIS IS THE CLIMAX. Slow down here. Build the tension: "We had trained 6 policies. None worked. We were questioning everything — was the model wrong? The data? The reward?" Then: "We wrote a script to compare leader and follower joint positions across our entire dataset. And there it was: wrist_flex, 17.5 degrees of systematic drift. The follower was consistently 17.5 degrees off from where the leader was commanding." Pause. "One re-calibration. Same policy. 0% to 80%." Let that sink in. "The data to find this was in our dataset all along. We just never looked."
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 9: Diagnostic Tools ==================== -->
+    <div class="slide" data-slide="9">
+      <div class="slide-inner">
+        <h2>Tools We Built <span class="text-primary">for Diagnosis</span></h2>
+        <div class="cols cols-3 gap-1 mt-15">
+          <div class="card">
+            <h3 style="font-size:0.95rem;" class="text-primary mb-05">compare_leader_follower</h3>
+            <p class="small text-muted mb-1">Reads every episode in a dataset. Computes per-joint drift statistics between leader commands and follower positions.</p>
+            <p class="tiny text-dim">Found the 17.5&deg; wrist_flex drift</p>
+            <pre class="mt-1" style="font-size:0.7rem;"><span class="cm"># Usage</span>
+<span class="fn">python</span> compare_leader_follower.py \
+  --dataset ./data/pick_block</pre>
+          </div>
+          <div class="card">
+            <h3 style="font-size:0.95rem;" class="text-secondary mb-05">evaluate_dataset_quality</h3>
+            <p class="small text-muted mb-1">Flags outlier episodes by trajectory smoothness, gripper timing, and completion metrics.</p>
+            <p class="tiny text-dim">Identified 12% corrupted episodes</p>
+            <pre class="mt-1" style="font-size:0.7rem;"><span class="cm"># Usage</span>
+<span class="fn">python</span> evaluate_dataset_quality.py \
+  --dataset ./data/pick_block \
+  --threshold <span class="num">2.0</span></pre>
+          </div>
+          <div class="card">
+            <h3 style="font-size:0.95rem;" class="text-warning mb-05">read_*_pos</h3>
+            <p class="small text-muted mb-1">Static calibration check. Reads current joint positions in real-time. Compare leader vs follower live.</p>
+            <p class="tiny text-dim">Verify calibration before recording</p>
+            <pre class="mt-1" style="font-size:0.7rem;"><span class="cm"># Usage</span>
+<span class="fn">python</span> read_leader_pos.py
+<span class="fn">python</span> read_follower_pos.py</pre>
+          </div>
+        </div>
+        <div class="highlight-box mt-15">
+          <p class="mono text-primary" style="font-size:1.2rem; font-weight:700;">~600 lines of Python</p>
+          <p class="small text-dim">that changed everything</p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 14:00 - 15:30</strong><br>
+        "These aren't sophisticated ML tools. They're data analysis scripts. But they saved us weeks." Quick walkthrough of each. Emphasize: these are small scripts anyone can write. The hard part isn't the code — it's knowing to look.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 10: The 15-20% Rule ==================== -->
+    <div class="slide" data-slide="10">
+      <div class="slide-inner">
+        <h2>The <span class="text-warning">15-20% Rule</span></h2>
+        <div class="cols cols-2 gap-15 mt-1">
+          <div>
+            <h3 class="small text-muted mb-05">Hard Example Mining</h3>
+            <ul>
+              <li>80% success rate on straight picks</li>
+              <li>20% success rate on rotated blocks</li>
+              <li>Only <strong class="text-danger">5%</strong> of dataset showed rotation</li>
+              <li>Below threshold = no learning signal</li>
+            </ul>
+
+            <div class="card-sm card-success mt-1">
+              <p class="small"><strong>Solution:</strong> Record 15-20 targeted episodes for the failure mode. Signal rises above threshold. Skill improves.</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="small text-muted mb-05">Data Augmentation</h3>
+            <div class="card-sm mb-1">
+              <p class="small text-success"><strong>Enable:</strong> brightness, contrast, blur</p>
+              <p class="tiny text-muted">Builds robustness to lighting and camera noise.</p>
+            </div>
+            <div class="card-sm card-warning">
+              <p class="small text-warning"><strong>Disable:</strong> hue jitter for multi-color tasks</p>
+              <p class="tiny text-muted">If the task depends on block color, hue jitter teaches the policy to ignore color.</p>
+            </div>
+            <div class="card-sm mt-1" style="background: var(--surface-alt);">
+              <p class="small text-dim"><strong>Rule of thumb:</strong> If a skill appears in &lt;15% of episodes, the model won't learn it. Add targeted data until it reaches 15-20%.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 15:30 - 17:00</strong><br>
+        "We plateaued at 80% success. The remaining 20% was always rotated blocks. We looked at the dataset: only 5% of episodes had rotation. The model had no signal to learn from." Explain the fix: targeted recording of hard examples. Also mention augmentation carefully — hue jitter destroys color-based tasks.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 11: Dataset Viz ==================== -->
+    <div class="slide" data-slide="11">
+      <div class="slide-inner center">
+        <h2>Dataset Visualization <span class="text-muted">with Rerun</span></h2>
+        <div class="placeholder mt-2">
+          <div>
+            <p class="placeholder-label">[ Live Demo / Screenshot ]</p>
+            <p>Rerun dataset visualization showing camera feeds,<br>joint trajectories, and episode annotations</p>
+            <p class="tiny text-dim mt-1" style="font-style:normal;">Insert screenshot of Rerun viewer with SO-101 dataset loaded</p>
+          </div>
+        </div>
+        <p class="small text-dim mt-15">Rerun makes it easy to spot outlier episodes, visualize joint drift, and verify camera alignment.</p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 17:00 - 18:00</strong><br>
+        Quick visual. Show the Rerun screenshot or live demo if possible. Point out: "You can see joint trajectories, camera feeds, and episode boundaries all in one view. This is how we spotted the outlier episodes that evaluate_dataset_quality flagged." Keep it brief — 1 minute max.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 12: Robot Demo ==================== -->
+    <div class="slide" data-slide="12">
+      <div class="slide-inner center">
+        <h2>Let's See It <span class="text-success">Work</span></h2>
+        <div style="display:flex; justify-content:center; margin-top:1.5rem;">
+          <iframe width="720" height="405" src="https://www.youtube.com/embed/hs3DzuAmxSQ?start=4" title="SO101 Robot Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:var(--radius); max-width:100%;"></iframe>
+        </div>
+        <p class="small text-dim mt-15">Post-calibration, post-hard-example-mining. 80%+ success rate on varied block positions.</p>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 18:00 - 19:00</strong><br>
+        Play the video. Let it breathe. "After all the debugging, the calibration fix, and the targeted data collection — here it is." If the video is short, play it twice: once at normal speed, once with commentary pointing out the approach, grasp, and placement.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 13: Lessons Learned ==================== -->
+    <div class="slide" data-slide="13">
+      <div class="slide-inner">
+        <h2>Lessons <span class="text-primary">Learned</span></h2>
+        <div class="quote mb-1">
+          "Investing in diagnostics beats investing in bigger models."
+        </div>
+        <div class="cols cols-2 gap-15 mt-15">
+          <div>
+            <h3 class="small text-muted mb-05">The Pattern</h3>
+            <p class="text-muted">Every visible symptom had its root cause <strong>2-3 layers below</strong> the surface.</p>
+            <ul class="mt-1">
+              <li><span class="text-danger">Policy fails</span> &rarr; data is wrong &rarr; calibration is off</li>
+              <li><span class="text-danger">Inconsistent results</span> &rarr; lighting variance &rarr; no augmentation</li>
+              <li><span class="text-danger">Skill plateau</span> &rarr; dataset imbalance &rarr; missing hard examples</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="small text-muted mb-05">Concrete Takeaways</h3>
+            <div class="card-sm mb-05">
+              <p class="small"><span class="text-success">1.</span> Verify calibration before every recording session</p>
+            </div>
+            <div class="card-sm mb-05">
+              <p class="small"><span class="text-success">2.</span> Build dataset inspection tools before training tools</p>
+            </div>
+            <div class="card-sm mb-05">
+              <p class="small"><span class="text-success">3.</span> Start with ACT. Add complexity only when needed</p>
+            </div>
+            <div class="card-sm mb-05">
+              <p class="small"><span class="text-success">4.</span> Record across conditions (lighting, position, angle)</p>
+            </div>
+            <div class="card-sm">
+              <p class="small"><span class="text-success">5.</span> Check your GPU utilization. Always</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 19:00 - 20:30</strong><br>
+        Transition slide. Summarize the local journey. "If you take one thing from this talk: build diagnostic tools before you build training pipelines." The pattern observation is key — symptoms mislead you. Root causes hide. Now transition: "But what if there was a way to skip most of these pitfalls?"
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 14: Cyberwave Intro ==================== -->
+    <div class="slide" data-slide="14">
+      <div class="slide-inner">
+        <h2>What If There Was <span class="text-secondary">an Easier Way?</span></h2>
+        <p class="text-muted mb-1">After fighting every layer of the stack, I found a platform that automates most of it.</p>
+        <div class="cols cols-2 gap-15 mt-1">
+          <div>
+            <h3 class="text-secondary mb-05">Cyberwave</h3>
+            <p class="text-muted small mb-1">One API for any robot. Write Python once &mdash; it runs in simulation AND on real hardware.</p>
+            <ul>
+              <li>Pre-configured digital twins for common robots</li>
+              <li>Cloud training with managed GPU infrastructure</li>
+              <li>Automated deployment and fleet management</li>
+              <li>Built-in observability and diagnostics</li>
+            </ul>
+          </div>
+          <div>
+            <!-- SVG: simple arch diagram -->
+            <svg class="diagram-svg" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Your Code -->
+              <rect x="120" y="10" width="160" height="45" rx="8" fill="#12121f" stroke="#a855f7" stroke-width="1.5"/>
+              <text x="200" y="38" text-anchor="middle" fill="#a855f7" font-family="JetBrains Mono" font-size="12" font-weight="600">Your Python Code</text>
+
+              <!-- Arrow down -->
+              <line x1="200" y1="55" x2="200" y2="85" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+
+              <!-- Cyberwave Platform -->
+              <rect x="40" y="90" width="320" height="130" rx="12" fill="rgba(168,85,247,0.08)" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 3"/>
+              <text x="200" y="112" text-anchor="middle" fill="#a855f7" font-family="Inter" font-size="11" font-weight="600" letter-spacing="0.08em">CYBERWAVE PLATFORM</text>
+
+              <!-- Inner boxes -->
+              <rect x="60" y="125" width="130" height="40" rx="6" fill="#12121f" stroke="#4f8cff" stroke-width="1"/>
+              <text x="125" y="150" text-anchor="middle" fill="#4f8cff" font-family="Inter" font-size="10" font-weight="500">Digital Twin</text>
+
+              <rect x="210" y="125" width="130" height="40" rx="6" fill="#12121f" stroke="#22c55e" stroke-width="1"/>
+              <text x="275" y="150" text-anchor="middle" fill="#22c55e" font-family="Inter" font-size="10" font-weight="500">Cloud Training</text>
+
+              <rect x="60" y="175" width="130" height="40" rx="6" fill="#12121f" stroke="#f59e0b" stroke-width="1"/>
+              <text x="125" y="200" text-anchor="middle" fill="#f59e0b" font-family="Inter" font-size="10" font-weight="500">Observability</text>
+
+              <rect x="210" y="175" width="130" height="40" rx="6" fill="#12121f" stroke="#ef4444" stroke-width="1"/>
+              <text x="275" y="200" text-anchor="middle" fill="#ef4444" font-family="Inter" font-size="10" font-weight="500">Deployment</text>
+
+              <!-- Arrow down from platform -->
+              <line x1="200" y1="225" x2="200" y2="255" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arrowhead)"/>
+
+              <!-- Real Robot -->
+              <rect x="120" y="260" width="160" height="35" rx="8" fill="#12121f" stroke="#22c55e" stroke-width="1.5"/>
+              <text x="200" y="282" text-anchor="middle" fill="#22c55e" font-family="JetBrains Mono" font-size="11" font-weight="600">Real Robot</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 20:30 - 22:00</strong><br>
+        Transition carefully. "I'm not saying don't learn the hard way — I just showed you why the hard way is valuable. But if your goal is to ship a robotics application, there's now a platform that handles the infrastructure." Keep it genuine: "I found Cyberwave after fighting all these issues. Here's what it does."
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 15: Cyberwave SO101 Example ==================== -->
+    <div class="slide" data-slide="15">
+      <div class="slide-inner">
+        <h2>Cyberwave: <span class="text-secondary">SO-101 Pick-and-Place</span></h2>
+        <p class="text-muted mb-1">The same task we did locally &mdash; but voice-controlled.</p>
+        <div class="cols cols-2 gap-15 mt-1">
+          <div>
+            <h3 class="small text-muted mb-05">What YOU Provide</h3>
+            <div class="card-sm mb-1">
+              <p class="small">1. A microphone + speech-to-text (any provider)</p>
+              <p class="small">2. A text command: <code>"pick up the red block"</code></p>
+            </div>
+            <h3 class="small text-muted mb-05">What CYBERWAVE Handles</h3>
+            <div class="card-sm card-secondary">
+              <ul class="small" style="margin:0;">
+                <li>Robot calibration and configuration</li>
+                <li>Camera setup and frame processing</li>
+                <li>Policy selection and loading</li>
+                <li>Inference loop at 30 Hz</li>
+                <li>Safety monitoring and recovery</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <pre style="font-size:0.78rem; line-height:1.7;">
+<span class="kw">from</span> cyberwave <span class="kw">import</span> <span class="fn">Robot</span>, <span class="fn">Task</span>
+
+<span class="cm"># Connect to your SO-101</span>
+robot = <span class="fn">Robot</span>(<span class="str">"so101"</span>)
+
+<span class="cm"># Define the task</span>
+task = <span class="fn">Task</span>(
+    name=<span class="str">"pick_and_place"</span>,
+    instruction=<span class="str">"pick up the red block"</span>,
+    robot=robot
+)
+
+<span class="cm"># Execute — Cyberwave handles everything</span>
+result = task.<span class="fn">run</span>()
+
+<span class="kw">print</span>(result.success)   <span class="cm"># True</span>
+<span class="kw">print</span>(result.duration)  <span class="cm"># 4.2s</span>
+</pre>
+            <p class="tiny text-dim mt-1">Tutorial: <span class="text-secondary mono">docs.cyberwave.com/tutorials/so101-voice-pick-and-place</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 22:00 - 23:30</strong><br>
+        Show the code. "This is the entire application. Compare this to the months we spent doing it locally." The voice control angle is compelling — you provide speech-to-text, Cyberwave handles everything else. Mention the tutorial link for people who want to try it.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 16: Local vs Cloud ==================== -->
+    <div class="slide" data-slide="16">
+      <div class="slide-inner">
+        <h2>Local vs Cloud: <span class="text-primary">Side by Side</span></h2>
+        <div class="table-wrap mt-15">
+          <table>
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Local (DIY)</th>
+                <th>Cyberwave</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Setup</strong></td>
+                <td><span class="text-danger">Days to weeks</span><br><span class="tiny text-dim">Assembly, firmware, calibration, drivers</span></td>
+                <td><span class="text-success">Minutes</span><br><span class="tiny text-dim">Connect robot, auto-configure</span></td>
+              </tr>
+              <tr>
+                <td><strong>Recording</strong></td>
+                <td><span class="text-warning">Manual teleoperation</span><br><span class="tiny text-dim">Camera ordering, USB bandwidth, Wayland</span></td>
+                <td><span class="text-success">Dashboard</span><br><span class="tiny text-dim">Guided recording with quality checks</span></td>
+              </tr>
+              <tr>
+                <td><strong>Training</strong></td>
+                <td><span class="text-warning">Local GPU</span><br><span class="tiny text-dim">OOM tuning, batch size trial-and-error</span></td>
+                <td><span class="text-success">Cloud GPU</span><br><span class="tiny text-dim">Auto-scaled, monitored, logged</span></td>
+              </tr>
+              <tr>
+                <td><strong>Debugging</strong></td>
+                <td><span class="text-danger">Custom scripts</span><br><span class="tiny text-dim">Build your own tools (we built ~600 LOC)</span></td>
+                <td><span class="text-success">Built-in observability</span><br><span class="tiny text-dim">Dashboards, drift detection, alerts</span></td>
+              </tr>
+              <tr>
+                <td><strong>Deployment</strong></td>
+                <td><span class="text-danger">Manual</span><br><span class="tiny text-dim">SSH, systemd, prayer</span></td>
+                <td><span class="text-success">One-click</span><br><span class="tiny text-dim">OTA updates, rollback</span></td>
+              </tr>
+              <tr>
+                <td><strong>Scaling</strong></td>
+                <td><span class="text-danger">1 robot</span><br><span class="tiny text-dim">Each new robot = start over</span></td>
+                <td><span class="text-success">Fleet</span><br><span class="tiny text-dim">Deploy to N robots simultaneously</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 23:30 - 25:00</strong><br>
+        Let the table speak for itself. Walk through each row briefly. Don't be dismissive of the local approach — "All of this local work taught us what matters. Cyberwave just automates the hard-won lessons." Mention: deployment row gets a laugh ("SSH, systemd, prayer").
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 17: When to Go Local vs Cloud ==================== -->
+    <div class="slide" data-slide="17">
+      <div class="slide-inner">
+        <h2>When to Go <span class="text-primary">Local</span> vs <span class="text-secondary">Cloud</span></h2>
+        <div class="cols cols-2 gap-15 mt-15">
+          <div class="decision-col">
+            <div class="decision-header text-primary">Go Local When...</div>
+            <div class="decision-item" style="--dot-color: var(--primary);"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--primary);"></span>You're <strong>learning</strong> how robot learning works</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--primary);"></span>Doing <strong>custom research</strong> on novel policies</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--primary);"></span>Working within a <strong>tight budget</strong></div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--primary);"></span>Need <strong>full control</strong> over every parameter</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--primary);"></span>Your robot isn't supported yet</div>
+          </div>
+          <div class="decision-col">
+            <div class="decision-header text-secondary">Go Cloud When...</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--secondary);"></span>Building for <strong>production</strong> deployment</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--secondary);"></span>Working in a <strong>team</strong> (shared datasets, models)</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--secondary);"></span>Need to <strong>scale</strong> beyond one robot</div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--secondary);"></span>You're <strong>time-constrained</strong></div>
+            <div class="decision-item"><span style="position:absolute;left:0;top:0.55rem;width:5px;height:5px;border-radius:50%;background:var(--secondary);"></span>Want built-in <strong>observability</strong></div>
+          </div>
+        </div>
+        <div class="highlight-box mt-2">
+          <p style="font-size:1.15rem; color:var(--text); font-weight:600;">"Start local to understand. Go cloud to ship."</p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 25:00 - 26:30</strong><br>
+        Balanced perspective. "Neither approach is wrong. They serve different goals." Emphasize: the local journey gives you intuition that's invaluable even if you later use a platform. The cloud approach is for when your goal shifts from learning to shipping. End with the tagline.
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 18: Thank You ==================== -->
+    <div class="slide title-slide" data-slide="18">
+      <div class="slide-inner center">
+        <h1 class="gradient-text">Thank You</h1>
+        <p class="subtitle">Questions? Or want to see Cyberwave live?</p>
+        <div class="cols cols-3 gap-1 mt-2" style="max-width:700px; margin-left:auto; margin-right:auto;">
+          <div class="card-sm center">
+            <p class="tiny text-dim">GitHub</p>
+            <p class="small mono text-primary">huggingface/lerobot</p>
+          </div>
+          <div class="card-sm center">
+            <p class="tiny text-dim">Platform</p>
+            <p class="small mono text-secondary">cyberwave.com</p>
+          </div>
+          <div class="card-sm center">
+            <p class="tiny text-dim">Speaker</p>
+            <p class="small mono text-success">@StefanoMaestri</p>
+          </div>
+        </div>
+        <div class="mt-2">
+          <p class="small text-dim">Slides: <span class="mono text-muted">github.com/maestri/pycon2026-so101</span></p>
+        </div>
+      </div>
+      <div class="speaker-notes">
+        <strong>Timing: 26:30 - 30:00</strong><br>
+        "Thank you for your attention. I'm happy to take questions. If anyone wants to see a live Cyberwave demo during the break, come find me — I'll have the robot set up." Mention: all diagnostic tools will be open-sourced. Slides are available at the link. If time permits, offer to show the Cyberwave dashboard live.
+      </div>
+    </div>
+
+  </div><!-- /deck -->
+
+  <!-- Controls -->
+  <div class="controls">
+    <button id="prevBtn" aria-label="Previous slide">&#8592;</button>
+    <span class="slide-counter" id="slideCounter">1 / 18</span>
+    <button id="nextBtn" aria-label="Next slide">&#8594;</button>
+  </div>
+
+  <div class="keyboard-hints">
+    <kbd>&larr;</kbd> <kbd>&rarr;</kbd> Navigate &nbsp;
+    <kbd>N</kbd> Notes &nbsp;
+    <kbd>F</kbd> Fullscreen
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+      const counter = document.getElementById('slideCounter');
+      const progressBar = document.getElementById('progressBar');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      let current = 0;
+
+      // Read initial slide from URL hash
+      function readHash() {
+        const hash = window.location.hash;
+        if (hash) {
+          const n = parseInt(hash.replace('#', ''), 10);
+          if (n >= 1 && n <= totalSlides) {
+            current = n - 1;
+          }
+        }
+      }
+
+      function showSlide(index) {
+        if (index < 0 || index >= totalSlides) return;
+        slides[current].classList.remove('active');
+        current = index;
+        slides[current].classList.add('active');
+        counter.textContent = (current + 1) + ' / ' + totalSlides;
+        progressBar.style.width = ((current + 1) / totalSlides * 100) + '%';
+        window.location.hash = current + 1;
+      }
+
+      function next() { showSlide(current + 1); }
+      function prev() { showSlide(current - 1); }
+
+      function toggleNotes() {
+        document.body.classList.toggle('show-notes');
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () {});
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      // Keyboard
+      document.addEventListener('keydown', function (e) {
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+          case ' ':
+            e.preventDefault();
+            next();
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            e.preventDefault();
+            prev();
+            break;
+          case 'n':
+          case 'N':
+            toggleNotes();
+            break;
+          case 'f':
+          case 'F':
+            toggleFullscreen();
+            break;
+          case 'Home':
+            e.preventDefault();
+            showSlide(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            showSlide(totalSlides - 1);
+            break;
+        }
+      });
+
+      // Button clicks
+      prevBtn.addEventListener('click', prev);
+      nextBtn.addEventListener('click', next);
+
+      // Touch support
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      document.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function (e) {
+        const dx = e.changedTouches[0].screenX - touchStartX;
+        const dy = e.changedTouches[0].screenY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+          if (dx < 0) next();
+          else prev();
+        }
+      }, { passive: true });
+
+      // Hash change
+      window.addEventListener('hashchange', function () {
+        const n = parseInt(window.location.hash.replace('#', ''), 10);
+        if (n >= 1 && n <= totalSlides && n - 1 !== current) {
+          showSlide(n - 1);
+        }
+      });
+
+      // Initialize
+      readHash();
+      showSlide(current);
+    })();
+  </script>
+</body>
+</html>

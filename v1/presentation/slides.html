@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From LeRobot to Real Robots | PyCon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #1e1e3a;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --primary: #4f8cff;
+      --secondary: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.3s ease;
+      z-index: 1000;
+    }
+
+    /* ===== SLIDE COUNTER ===== */
+    #slide-counter {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 2rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      z-index: 1000;
+      user-select: none;
+    }
+
+    /* ===== NAV ARROWS ===== */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
+      opacity: 0;
+    }
+
+    body:hover .nav-arrow { opacity: 0.7; }
+    .nav-arrow:hover { background: var(--primary); color: white; opacity: 1 !important; }
+    #nav-prev { left: 1rem; }
+    #nav-next { right: 1rem; }
+    .nav-arrow svg { width: 20px; height: 20px; }
+
+    /* ===== SLIDES CONTAINER ===== */
+    #deck {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4rem 6rem;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    .slide h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+    }
+
+    .slide h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.25rem;
+      color: var(--text);
+    }
+
+    .slide h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--primary);
+    }
+
+    .slide p, .slide li {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--text-muted);
+    }
+
+    .slide ul, .slide ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .slide li { margin-bottom: 0.5rem; }
+
+    .slide strong { color: var(--text); font-weight: 600; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--text) 0%, var(--primary) 50%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-accent-top {
+      border-top: 2px solid var(--primary);
+    }
+
+    .card-accent-danger {
+      border-top: 2px solid var(--danger);
+    }
+
+    .card-accent-success {
+      border-top: 2px solid var(--success);
+    }
+
+    .card-accent-warning {
+      border-top: 2px solid var(--warning);
+    }
+
+    .card-accent-secondary {
+      border-top: 2px solid var(--secondary);
+    }
+
+    /* ===== CODE BLOCKS ===== */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9em;
+      background: var(--surface);
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--primary);
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .code-highlight { color: var(--primary); }
+    .code-string { color: var(--success); }
+    .code-comment { color: #475569; font-style: italic; }
+    .code-number { color: var(--warning); }
+    .code-danger { color: var(--danger); }
+
+    /* ===== TAGS / BADGES ===== */
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+    }
+
+    .tag-primary { background: rgba(79,140,255,0.15); color: var(--primary); }
+    .tag-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+    .tag-success { background: rgba(34,197,94,0.15); color: var(--success); }
+    .tag-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .tag-secondary { background: rgba(168,85,247,0.15); color: var(--secondary); }
+
+    /* ===== BEFORE / AFTER COMPARISON ===== */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .comparison .before { border-left: 3px solid var(--danger); padding-left: 1rem; }
+    .comparison .after { border-left: 3px solid var(--success); padding-left: 1rem; }
+
+    /* ===== FLOW / ARROW DIAGRAMS ===== */
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .flow-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== TABLE ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    th {
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td { color: var(--text-muted); }
+
+    /* ===== METRIC BOX ===== */
+    .metric {
+      text-align: center;
+    }
+
+    .metric .value {
+      font-size: 2.5rem;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .metric .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .metric-danger .value { color: var(--danger); }
+    .metric-success .value { color: var(--success); }
+    .metric-warning .value { color: var(--warning); }
+    .metric-primary .value { color: var(--primary); }
+
+    /* ===== TWO-COLUMN LAYOUT ===== */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* ===== SPEAKER NOTES PANEL ===== */
+    #notes-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 35%;
+      background: rgba(18, 18, 31, 0.97);
+      border-top: 2px solid var(--border);
+      padding: 1.25rem 2rem;
+      overflow-y: auto;
+      z-index: 2000;
+      display: none;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      backdrop-filter: blur(12px);
+    }
+
+    #notes-panel.visible { display: block; }
+
+    #notes-panel .notes-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    /* ===== TITLE SLIDE SPECIFIC ===== */
+    .slide-title { text-align: center; }
+    .slide-title h1 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+    .slide-title .subtitle {
+      font-size: 1.35rem;
+      color: var(--text-muted);
+      font-weight: 300;
+      margin-bottom: 2rem;
+    }
+    .slide-title .speaker-line {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .slide-title .speaker-line strong { color: var(--text); }
+    .slide-title .event-badge {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--primary);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ===== PLACEHOLDER BOXES ===== */
+    .placeholder {
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .placeholder .placeholder-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+
+    /* ===== QUOTE ===== */
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    .callout-danger { border-left-color: var(--danger); }
+    .callout-success { border-left-color: var(--success); }
+    .callout-warning { border-left-color: var(--warning); }
+
+    /* ===== SVG DIAGRAMS ===== */
+    svg text {
+      font-family: 'Inter', sans-serif;
+    }
+
+    svg .node-rect {
+      rx: 8;
+      ry: 8;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .slide { padding: 2.5rem 2rem; }
+      .slide h1 { font-size: 2.2rem; }
+      .slide h2 { font-size: 1.5rem; }
+      .two-col, .comparison { grid-template-columns: 1fr; }
+      .card-row { grid-template-columns: 1fr; }
+    }
+
+    /* ===== SLIDE TRANSITION ===== */
+    .slide-exit {
+      display: flex !important;
+      opacity: 0 !important;
+      transition: opacity 0.2s ease;
+    }
+
+    /* ===== LAST SLIDE / THANK YOU ===== */
+    .closing-tagline {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 2rem;
+    }
+
+    /* ===== ICON LABELS ===== */
+    .icon-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .icon-label .il-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress-bar" style="width: 0%"></div>
+
+<!-- Slide counter -->
+<div id="slide-counter">1 / 22</div>
+
+<!-- Navigation arrows -->
+<button class="nav-arrow" id="nav-prev" aria-label="Previous slide">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+</button>
+<button class="nav-arrow" id="nav-next" aria-label="Next slide">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+</button>
+
+<!-- Speaker notes panel -->
+<div id="notes-panel">
+  <div class="notes-label">Speaker Notes (N to toggle)</div>
+  <div id="notes-content"></div>
+</div>
+
+<!-- ==================== SLIDE DECK ==================== -->
+<div id="deck">
+
+<!-- ========== SLIDE 1: TITLE ========== -->
+<div class="slide slide-title active" data-notes="Welcome everyone. I'm Stefano, a software engineer who spent the last several months trying to make a budget robot arm grab a red block. Spoiler: it was much harder than the tutorials make it look. This talk is the full unfiltered story.">
+  <div class="event-badge">PyCon 2026</div>
+  <h1 class="gradient-text">From LeRobot to Real Robots</h1>
+  <p class="subtitle">What They Don't Tell You About Making a Robot Arm Grab Things</p>
+  <p class="speaker-line"><strong>Stefano Maestri</strong> &mdash; Software Engineer &amp; Robotics Tinkerer</p>
+</div>
+
+<!-- ========== SLIDE 2: AGENDA ========== -->
+<div class="slide" data-notes="Here is our roadmap. 30 minutes, five real bugs, and one robot that eventually learned to grab things. We start with the setup, then walk through every failure before reaching success.">
+  <h2>What to Expect in 30 Minutes</h2>
+  <div class="card-row">
+    <div class="card card-accent-top">
+      <h3>1. The Setup</h3>
+      <p>LeRobot + SO101 hardware, assembly, cameras, recording pipeline</p>
+    </div>
+    <div class="card card-accent-danger">
+      <h3>2. The Bug Parade</h3>
+      <p>5 real bugs: CPU policy, action chunking, causal confounding, calibration drift, distribution shift</p>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="card card-accent-success">
+      <h3>3. The Fix</h3>
+      <p>Profiling, diagnostics, tools we built, training metrics that matter</p>
+    </div>
+    <div class="card card-accent-secondary">
+      <h3>4. Lessons &amp; Beyond</h3>
+      <p>What worked, what did not, and the easier path with Cyberwave</p>
+    </div>
+  </div>
+  <p style="margin-top:0.75rem; font-size:0.95rem; color:var(--text-muted);">
+    <span class="tag tag-danger">5 bugs</span>
+    <span class="tag tag-success">5 fixes</span>
+    <span class="tag tag-primary">1 robot</span>
+    <span class="tag tag-warning">17.5 degrees</span>
+  </p>
+</div>
+
+<!-- ========== SLIDE 3: WHAT IS LEROBOT + SO101 ========== -->
+<div class="slide" data-notes="LeRobot is HuggingFace's open-source PyTorch library for real-world robotics. It gives you datasets, pretrained policies, and tools for training. The SO101 is a budget 6-DOF arm — around 300 euros — with 3D-printed parts and STS3215 servo motors. Our task was simple: grab the red block, put it in the box. Simple to describe, nightmarish to execute.">
+  <h2>LeRobot + SO101</h2>
+  <div class="two-col">
+    <div>
+      <div class="card card-accent-top">
+        <h3>LeRobot</h3>
+        <ul>
+          <li>Open-source <strong>PyTorch</strong> robotics library by <strong>HuggingFace</strong></li>
+          <li>Datasets, pretrained policies, training &amp; eval tools</li>
+          <li>CLI: <code>lerobot-record</code>, <code>lerobot-train</code>, <code>lerobot-rollout</code></li>
+          <li>Integrates with HF Hub for model/dataset sharing</li>
+        </ul>
+      </div>
+      <div class="card card-accent-top">
+        <h3>SO101 Robot Arm</h3>
+        <ul>
+          <li><strong>6-DOF</strong> leader-follower arm pair</li>
+          <li>3D-printed structure + STS3215 servos</li>
+          <li>Budget: ~300 EUR total</li>
+          <li>Open-source hardware design</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="text-align:center; border-top: 2px solid var(--warning);">
+        <h3 style="color: var(--warning);">The Task</h3>
+        <p style="font-size:1.3rem; font-weight:600; color:var(--text); margin: 1rem 0;">
+          "Grab the red block and put it in the box"
+        </p>
+        <p>Sounds simple. It was not.</p>
+      </div>
+      <svg viewBox="0 0 320 160" width="100%" style="margin-top:1rem;">
+        <rect x="10" y="10" width="300" height="140" rx="12" fill="var(--surface)" stroke="var(--border)"/>
+        <!-- table -->
+        <rect x="40" y="100" width="240" height="10" rx="3" fill="#1e1e3a"/>
+        <!-- block -->
+        <rect x="90" y="70" width="30" height="30" rx="3" fill="var(--danger)" opacity="0.8"/>
+        <text x="105" y="90" text-anchor="middle" fill="white" font-size="10" font-weight="600">B</text>
+        <!-- box -->
+        <rect x="200" y="65" width="45" height="35" rx="3" fill="none" stroke="var(--warning)" stroke-width="2"/>
+        <text x="222" y="87" text-anchor="middle" fill="var(--warning)" font-size="9">BOX</text>
+        <!-- arm base -->
+        <rect x="140" y="90" width="16" height="12" rx="2" fill="var(--primary)"/>
+        <!-- arm segments -->
+        <line x1="148" y1="90" x2="130" y2="55" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="130" y1="55" x2="110" y2="50" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+        <!-- gripper -->
+        <line x1="110" y1="47" x2="105" y2="42" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="110" y1="53" x2="105" y2="58" stroke="var(--text)" stroke-width="2" stroke-linecap="round"/>
+        <!-- arrow -->
+        <path d="M 120 65 Q 160 30 210 65" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="210,65 205,58 213,60" fill="var(--success)"/>
+        <text x="160" y="28" text-anchor="middle" fill="var(--success)" font-size="9">pick &amp; place</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 4: HARDWARE JOURNEY ========== -->
+<div class="slide" data-notes="The hardware journey started with fun and ended with frustration. A defective 3D-printed shoulder part caused binding. We received the wrong motor model initially. The firmware update tool only runs on Windows, which means if you are a Linux user you need a Windows machine just for that. And then there is calibration: an unforgiving process where you must align every joint perfectly.">
+  <h2>Hardware Journey</h2>
+  <p style="margin-bottom:1.25rem">Assembly surprises no tutorial prepares you for</p>
+  <div class="card-row">
+    <div class="card card-accent-danger">
+      <h3 style="color:var(--danger)">Defective Part</h3>
+      <p>3D-printed shoulder bracket had layer adhesion failure. Caused binding under load. Reprinted with higher infill.</p>
+    </div>
+    <div class="card card-accent-danger">
+      <h3 style="color:var(--danger)">Wrong Motors</h3>
+      <p>Received SCS3215 instead of STS3215. Different protocol, different firmware. Had to reorder from the correct supplier.</p>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="card card-accent-warning">
+      <h3 style="color:var(--warning)">Firmware: Windows Only</h3>
+      <p>The FD debug tool for STS3215 firmware updates runs exclusively on Windows. Linux users: find a Windows machine or VM.</p>
+    </div>
+    <div class="card card-accent-warning">
+      <h3 style="color:var(--warning)">Calibration Procedure</h3>
+      <p>Every joint must be manually aligned to its zero position. Millimeter precision required. One wrong offset propagates to the entire kinematic chain.</p>
+    </div>
+  </div>
+  <div class="callout callout-danger" style="margin-top:0.5rem;">
+    <strong>Lesson:</strong> Budget hardware + 3D printing = expect 2-3 weeks of hardware debugging before you write any ML code.
+  </div>
+</div>
+
+<!-- ========== SLIDE 5: CAMERA SETUP & USB ========== -->
+<div class="slide" data-notes="We use 3 cameras: front, right side, and wrist-mounted. All at 640 by 480 at 30 fps. The critical problem: all three share USB 2.0 Bus 001. That is a theoretical maximum of 480 Mbps shared bandwidth. Three uncompressed 640x480 streams at 30Hz eat about 830 Mbps, which means USB will throttle. The solution is using MJPEG compression at the camera level and spreading cameras across different USB controllers if possible.">
+  <h2>Camera Setup &amp; USB Topology</h2>
+  <div class="two-col">
+    <div>
+      <h3>3 Cameras, 1 Task</h3>
+      <table>
+        <thead><tr><th>Camera</th><th>Position</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td><code>front</code></td><td>Top-down view</td><td>640x480 @ 30Hz</td></tr>
+          <tr><td><code>right</code></td><td>Side angle</td><td>640x480 @ 30Hz</td></tr>
+          <tr><td><code>wrist</code></td><td>Gripper-mounted</td><td>640x480 @ 30Hz</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-warning" style="margin-top:1rem;">
+        <strong>Problem:</strong> All 3 cameras on USB 2.0 Bus 001 = 480 Mbps shared bandwidth. 3 raw streams need ~830 Mbps.
+      </div>
+      <p style="margin-top:0.75rem;"><span class="tag tag-success">Fix</span> MJPEG at camera level + spread across USB controllers.</p>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 280" width="100%">
+        <!-- USB Host -->
+        <rect x="100" y="10" width="120" height="36" rx="8" fill="var(--surface)" stroke="var(--primary)" stroke-width="2"/>
+        <text x="160" y="33" text-anchor="middle" fill="var(--primary)" font-size="12" font-weight="600">USB Host (Bus 001)</text>
+        <!-- Hub -->
+        <rect x="115" y="75" width="90" height="30" rx="6" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="160" y="95" text-anchor="middle" fill="var(--text-muted)" font-size="11">USB 2.0 Hub</text>
+        <line x1="160" y1="46" x2="160" y2="75" stroke="var(--border)" stroke-width="1.5"/>
+        <!-- Camera 1 -->
+        <rect x="10" y="135" width="90" height="30" rx="6" fill="var(--surface)" stroke="var(--success)" stroke-width="1.5"/>
+        <text x="55" y="155" text-anchor="middle" fill="var(--success)" font-size="11">front cam</text>
+        <line x1="130" y1="105" x2="55" y2="135" stroke="var(--border)" stroke-width="1"/>
+        <!-- Camera 2 -->
+        <rect x="115" y="135" width="90" height="30" rx="6" fill="var(--surface)" stroke="var(--success)" stroke-width="1.5"/>
+        <text x="160" y="155" text-anchor="middle" fill="var(--success)" font-size="11">right cam</text>
+        <line x1="160" y1="105" x2="160" y2="135" stroke="var(--border)" stroke-width="1"/>
+        <!-- Camera 3 -->
+        <rect x="220" y="135" width="90" height="30" rx="6" fill="var(--surface)" stroke="var(--success)" stroke-width="1.5"/>
+        <text x="265" y="155" text-anchor="middle" fill="var(--success)" font-size="11">wrist cam</text>
+        <line x1="190" y1="105" x2="265" y2="135" stroke="var(--border)" stroke-width="1"/>
+        <!-- Robot -->
+        <rect x="35" y="195" width="100" height="30" rx="6" fill="var(--surface)" stroke="var(--secondary)" stroke-width="1.5"/>
+        <text x="85" y="215" text-anchor="middle" fill="var(--secondary)" font-size="11">SO101 Follower</text>
+        <line x1="85" y1="105" x2="85" y2="195" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+        <!-- Leader -->
+        <rect x="185" y="195" width="100" height="30" rx="6" fill="var(--surface)" stroke="var(--secondary)" stroke-width="1.5"/>
+        <text x="235" y="215" text-anchor="middle" fill="var(--secondary)" font-size="11">SO101 Leader</text>
+        <line x1="235" y1="105" x2="235" y2="195" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+        <!-- Bandwidth warning -->
+        <rect x="60" y="245" width="200" height="26" rx="6" fill="rgba(239,68,68,0.1)" stroke="var(--danger)" stroke-width="1"/>
+        <text x="160" y="263" text-anchor="middle" fill="var(--danger)" font-size="10" font-weight="600">Shared 480 Mbps bandwidth</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 6: RECORDING PIPELINE ========== -->
+<div class="slide" data-notes="The recording pipeline uses lerobot-record. On Wayland, pynput keyboard listeners fail silently because Wayland does not let applications snoop on global key events. Our fix was contributing an interactive stdin prompt with three choices: Y to keep, n to re-record, q to quit. Plus a SIGQUIT handler on Ctrl+backslash for ending episodes early. Zero new threads, just signal handlers. The sentinel value reset_time_s equals minus one activates this mode.">
+  <h2>Recording Pipeline</h2>
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:var(--primary)"><code>lerobot-record</code></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box">Teleoperate</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box">Save Episode</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box">Reset Scene</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-box">Repeat</div>
+  </div>
+  <div class="two-col" style="margin-top:1rem;">
+    <div>
+      <div class="card card-accent-danger">
+        <h3 style="color:var(--danger)">Problem: Wayland Breaks pynput</h3>
+        <p>Wayland blocks global keyboard event snooping. The <code>pynput.keyboard.Listener</code> silently fails. No arrow-key controls during recording.</p>
+      </div>
+      <div class="card card-accent-success">
+        <h3 style="color:var(--success)">Our Fix: stdin + SIGQUIT</h3>
+        <ul>
+          <li><strong>stdin prompt</strong>: <code>[Y/n/q]</code> between episodes</li>
+          <li><strong>SIGQUIT</strong> (Ctrl+\): end episode early</li>
+          <li><strong>Zero new threads</strong></li>
+          <li>Sentinel: <code>--dataset.reset_time_s=-1</code></li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <pre><code><span class="code-comment"># Activate interactive mode</span>
+lerobot-record \
+  --robot.type=so101_follower \
+  <span class="code-danger">--dataset.reset_time_s=-1</span> \
+  --dataset.single_task=<span class="code-string">"Grab the red block"</span> \
+  ...
+
+<span class="code-comment"># Between episodes:</span>
+<span class="code-highlight">[INTERACTIVE RESET]</span> Episode 3 recorded.
+Keep scene and record next? <span class="code-string">[Y/n/q]</span>: <span class="code-highlight">y</span>
+
+<span class="code-comment"># During recording:</span>
+<span class="code-comment"># Press Ctrl+\ to end episode early</span>
+<span class="code-highlight">[INTERACTIVE]</span> Episode end requested
+via SIGQUIT</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 7: POLICY LANDSCAPE ========== -->
+<div class="slide" data-notes="Three policy families matter here. ACT with 80 million parameters is a specialist: you train it for one task, it does that task well. SmolVLA at 500 million is language-conditioned, meaning you can describe the task in text. Then there are the Pi0 models at 3 billion, which are foundation models pretrained on massive robot datasets. The trade-off is always specialization versus generalization versus compute. For a 16GB laptop GPU, ACT is the practical choice.">
+  <h2>Policy Landscape</h2>
+  <p style="margin-bottom:1rem;">Choosing the right model for a budget setup</p>
+  <svg viewBox="0 0 700 320" width="100%" style="margin-bottom:1rem;">
+    <!-- Axes -->
+    <line x1="80" y1="280" x2="680" y2="280" stroke="var(--border)" stroke-width="1"/>
+    <line x1="80" y1="280" x2="80" y2="30" stroke="var(--border)" stroke-width="1"/>
+    <text x="380" y="310" text-anchor="middle" fill="var(--text-muted)" font-size="12">Parameters (log scale)</text>
+    <text x="30" y="155" text-anchor="middle" fill="var(--text-muted)" font-size="12" transform="rotate(-90 30 155)">Generalization</text>
+    <!-- ACT bubble -->
+    <circle cx="180" cy="220" r="35" fill="rgba(79,140,255,0.2)" stroke="var(--primary)" stroke-width="2"/>
+    <text x="180" y="216" text-anchor="middle" fill="var(--primary)" font-size="14" font-weight="700">ACT</text>
+    <text x="180" y="233" text-anchor="middle" fill="var(--text-muted)" font-size="10">80M params</text>
+    <!-- SmolVLA bubble -->
+    <circle cx="380" cy="140" r="45" fill="rgba(168,85,247,0.15)" stroke="var(--secondary)" stroke-width="2"/>
+    <text x="380" y="134" text-anchor="middle" fill="var(--secondary)" font-size="14" font-weight="700">SmolVLA</text>
+    <text x="380" y="152" text-anchor="middle" fill="var(--text-muted)" font-size="10">500M params</text>
+    <text x="380" y="166" text-anchor="middle" fill="var(--text-muted)" font-size="9">language-conditioned</text>
+    <!-- Pi0 bubble -->
+    <circle cx="560" cy="80" r="55" fill="rgba(34,197,94,0.12)" stroke="var(--success)" stroke-width="2"/>
+    <text x="560" y="72" text-anchor="middle" fill="var(--success)" font-size="14" font-weight="700">Pi0 / Pi0-FAST</text>
+    <text x="560" y="90" text-anchor="middle" fill="var(--text-muted)" font-size="10">3B params</text>
+    <text x="560" y="104" text-anchor="middle" fill="var(--text-muted)" font-size="9">foundation model</text>
+    <!-- Our choice marker -->
+    <rect x="148" y="256" width="64" height="20" rx="10" fill="var(--primary)"/>
+    <text x="180" y="270" text-anchor="middle" fill="white" font-size="10" font-weight="600">OUR PICK</text>
+    <!-- Trade-off labels -->
+    <text x="180" y="186" text-anchor="middle" fill="var(--primary)" font-size="9">Specialist</text>
+    <text x="560" y="142" text-anchor="middle" fill="var(--success)" font-size="9">Generalist</text>
+    <!-- GPU limit line -->
+    <line x1="270" y1="35" x2="270" y2="275" stroke="var(--danger)" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="275" y="50" fill="var(--danger)" font-size="10" font-weight="600">16 GB VRAM limit</text>
+  </svg>
+  <div class="card-row">
+    <div class="card" style="text-align:center;">
+      <span class="tag tag-primary">ACT</span>
+      <p style="margin-top:0.5rem">chunk_size=<strong>100</strong>, n_action_steps=<strong>100</strong></p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <span class="tag tag-secondary">SmolVLA</span>
+      <p style="margin-top:0.5rem">Language prompt + vision encoder</p>
+    </div>
+    <div class="card" style="text-align:center;">
+      <span class="tag tag-success">Pi0</span>
+      <p style="margin-top:0.5rem">chunk_size=<strong>50</strong>, pretrained backbone</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 8: TRAINING ON 16GB GPU ========== -->
+<div class="slide" data-notes="Training on a 16GB laptop GPU, the RTX 5000 Ada. Batch size 32 causes OOM immediately. Batch size 16 fits with AMP enabled. Gradient checkpointing saves another gig of VRAM. The key numbers: peak usage around 14.2 GB, training runs at about 60 steps per second. Total training time for 100k steps is roughly 28 minutes. We monitor with nvidia-smi in a loop.">
+  <h2>Training on 16 GB VRAM</h2>
+  <p style="margin-bottom:1.25rem;">RTX 5000 Ada Laptop &mdash; making ACT fit</p>
+  <div class="card-row">
+    <div class="card metric metric-danger">
+      <div class="value">OOM</div>
+      <div class="label">batch_size = 32</div>
+    </div>
+    <div class="card metric metric-success">
+      <div class="value">14.2 GB</div>
+      <div class="label">batch_size = 16 + AMP</div>
+    </div>
+    <div class="card metric metric-primary">
+      <div class="value">~28 min</div>
+      <div class="label">100k steps total</div>
+    </div>
+  </div>
+  <pre><code><span class="code-comment"># Training command</span>
+lerobot-train \
+  --policy.type=act \
+  <span class="code-highlight">--training.batch_size=16</span> \
+  <span class="code-highlight">--policy.device=cuda</span> \
+  --dataset.repo_id=smaestri/so101_pick_place \
+  --training.num_steps=100000 \
+  --training.eval_freq=10000 \
+  --wandb.enable=true
+
+<span class="code-comment"># Monitor VRAM in another terminal</span>
+watch -n1 nvidia-smi --query-gpu=memory.used,utilization.gpu \
+  --format=csv,noheader</code></pre>
+  <div class="callout callout-success" style="margin-top:0.5rem;">
+    <strong>Tip:</strong> AMP (<code>torch.autocast</code>) is used automatically during inference via <code>use_amp</code> flag. For training, the pipeline handles mixed precision through Accelerate.
+  </div>
+</div>
+
+<!-- ========== SLIDE 9: BUG #1 — POLICY ON CPU ========== -->
+<div class="slide" data-notes="Bug number one. After training, we deploy the policy and notice something weird: nvidia-smi shows GPU utilization at 2 percent and VRAM usage at 46 MB. The policy silently defaulted to CPU inference. Without an explicit device flag, it loads on CPU. The fix is one flag. Before: 17 Hz inference. After: stable 30 Hz. This one line made the difference between a stuttering robot and a smooth one.">
+  <h2><span class="tag tag-danger" style="font-size:1rem;">BUG #1</span> Policy on CPU</h2>
+  <p style="margin-bottom:1.25rem;">GPU sitting idle while the robot stutters</p>
+  <div class="comparison">
+    <div class="before">
+      <h3 style="color:var(--danger)">Before</h3>
+      <div class="card">
+        <div class="metric metric-danger">
+          <div class="value">2%</div>
+          <div class="label">GPU Utilization</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric metric-danger">
+          <div class="value">46 MB</div>
+          <div class="label">VRAM Used</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric metric-warning">
+          <div class="value">17 Hz</div>
+          <div class="label">Inference Rate</div>
+        </div>
+      </div>
+      <pre><code><span class="code-comment"># Policy silently defaults to CPU</span>
+lerobot-rollout \
+  --policy.path=outputs/act_pick/ \
+  <span class="code-danger">  # no --policy.device flag</span></code></pre>
+    </div>
+    <div class="after">
+      <h3 style="color:var(--success)">After</h3>
+      <div class="card">
+        <div class="metric metric-success">
+          <div class="value">85%</div>
+          <div class="label">GPU Utilization</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric metric-success">
+          <div class="value">~2 GB</div>
+          <div class="label">VRAM Used</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="metric metric-success">
+          <div class="value">30 Hz</div>
+          <div class="label">Inference Rate (stable)</div>
+        </div>
+      </div>
+      <pre><code><span class="code-comment"># Explicit device flag</span>
+lerobot-rollout \
+  --policy.path=outputs/act_pick/ \
+  <span class="code-highlight">--policy.device=cuda</span></code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 10: BUG #2 — ACTION CHUNKING ========== -->
+<div class="slide" data-notes="Bug number two. Or rather, not-a-bug number two. We saw GPU utilization spike briefly then drop to zero for long periods. ACT predicts 100 actions in a single forward pass, then replays them one by one for 100 steps at 30Hz. That is about 3.3 seconds of robot motion from one inference call. GPU idle 90 percent of the time is NORMAL for ACT. Those sporadic 'running slower than requested' warnings are just timing jitter, not a real issue. This cost us 2 days of debugging a non-problem.">
+  <h2><span class="tag tag-warning" style="font-size:1rem;">BUG #2</span> Action Chunking Confusion</h2>
+  <p style="margin-bottom:1rem;">When "GPU idle 90% of the time" is actually correct</p>
+  <svg viewBox="0 0 700 180" width="100%" style="margin-bottom:1rem;">
+    <!-- Timeline -->
+    <line x1="40" y1="100" x2="680" y2="100" stroke="var(--border)" stroke-width="1"/>
+    <!-- Forward pass -->
+    <rect x="50" y="60" width="30" height="40" rx="4" fill="var(--primary)" opacity="0.8"/>
+    <text x="65" y="55" text-anchor="middle" fill="var(--primary)" font-size="9" font-weight="600">FWD</text>
+    <!-- Cached actions -->
+    <rect x="85" y="70" width="190" height="30" rx="4" fill="rgba(34,197,94,0.15)" stroke="var(--success)" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="180" y="90" text-anchor="middle" fill="var(--success)" font-size="10">99 cached actions replayed (3.3s)</text>
+    <!-- Second forward pass -->
+    <rect x="280" y="60" width="30" height="40" rx="4" fill="var(--primary)" opacity="0.8"/>
+    <text x="295" y="55" text-anchor="middle" fill="var(--primary)" font-size="9" font-weight="600">FWD</text>
+    <!-- Second cached -->
+    <rect x="315" y="70" width="190" height="30" rx="4" fill="rgba(34,197,94,0.15)" stroke="var(--success)" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="410" y="90" text-anchor="middle" fill="var(--success)" font-size="10">99 cached actions replayed (3.3s)</text>
+    <!-- Third forward -->
+    <rect x="510" y="60" width="30" height="40" rx="4" fill="var(--primary)" opacity="0.8"/>
+    <text x="525" y="55" text-anchor="middle" fill="var(--primary)" font-size="9" font-weight="600">FWD</text>
+    <rect x="545" y="70" width="120" height="30" rx="4" fill="rgba(34,197,94,0.15)" stroke="var(--success)" stroke-width="1" stroke-dasharray="3 2"/>
+    <!-- GPU usage bar -->
+    <text x="40" y="145" fill="var(--text-muted)" font-size="10">GPU:</text>
+    <rect x="70" y="133" width="15" height="16" rx="2" fill="var(--primary)" opacity="0.7"/>
+    <rect x="88" y="133" width="190" height="16" rx="2" fill="var(--surface)" stroke="var(--border)"/>
+    <rect x="281" y="133" width="15" height="16" rx="2" fill="var(--primary)" opacity="0.7"/>
+    <rect x="299" y="133" width="205" height="16" rx="2" fill="var(--surface)" stroke="var(--border)"/>
+    <rect x="507" y="133" width="15" height="16" rx="2" fill="var(--primary)" opacity="0.7"/>
+    <rect x="525" y="133" width="120" height="16" rx="2" fill="var(--surface)" stroke="var(--border)"/>
+    <text x="40" y="170" fill="var(--text-muted)" font-size="10">Time:</text>
+    <text x="65" y="170" fill="var(--text-muted)" font-size="9">0s</text>
+    <text x="280" y="170" fill="var(--text-muted)" font-size="9">3.3s</text>
+    <text x="510" y="170" fill="var(--text-muted)" font-size="9">6.6s</text>
+  </svg>
+  <div class="card-row">
+    <div class="card">
+      <h3>ACT Configuration</h3>
+      <p><code>chunk_size = 100</code>, <code>n_action_steps = 100</code></p>
+      <p style="margin-top:0.5rem;">1 forward pass = 100 actions = 3.3s of motion at 30 Hz</p>
+    </div>
+    <div class="card card-accent-warning">
+      <h3 style="color:var(--warning)">The False Alarm</h3>
+      <p>Sporadic <code>"running slower than requested fps"</code> warnings = timing jitter, <strong>not a bug</strong>.</p>
+      <p style="margin-top:0.5rem;"><span class="tag tag-danger">Cost us</span> 2 days debugging a non-problem.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 11: DIAGNOSTIC FLOW ========== -->
+<div class="slide" data-notes="To understand the 30Hz loop, we added temporary logger.info calls to every step. The breakdown tells the real story. get_observation costs 2ms. Preprocessing is near-zero. Policy inference is either 3ms when using cached actions or 22ms for a real forward pass. send_action costs a fraction of a millisecond. Total per step: about 5ms, well under the 33ms budget for 30Hz. The bottleneck is not computation, it is data quality.">
+  <h2>Diagnostic Flow</h2>
+  <p style="margin-bottom:1rem;">Profiling the 30 Hz control loop</p>
+  <svg viewBox="0 0 700 260" width="100%">
+    <!-- Pipeline stages -->
+    <rect x="20" y="30" width="130" height="50" rx="8" fill="var(--surface)" stroke="var(--primary)" stroke-width="1.5"/>
+    <text x="85" y="52" text-anchor="middle" fill="var(--primary)" font-size="12" font-weight="600">get_observation</text>
+    <text x="85" y="70" text-anchor="middle" fill="var(--text-muted)" font-size="11">~2 ms</text>
+
+    <text x="166" y="58" fill="var(--text-muted)" font-size="16">&rarr;</text>
+
+    <rect x="182" y="30" width="120" height="50" rx="8" fill="var(--surface)" stroke="var(--border)" stroke-width="1.5"/>
+    <text x="242" y="52" text-anchor="middle" fill="var(--text-muted)" font-size="12" font-weight="600">preprocess</text>
+    <text x="242" y="70" text-anchor="middle" fill="var(--text-muted)" font-size="11">~0 ms</text>
+
+    <text x="318" y="58" fill="var(--text-muted)" font-size="16">&rarr;</text>
+
+    <rect x="334" y="30" width="140" height="50" rx="8" fill="var(--surface)" stroke="var(--secondary)" stroke-width="1.5"/>
+    <text x="404" y="48" text-anchor="middle" fill="var(--secondary)" font-size="12" font-weight="600">policy.select_action</text>
+    <text x="404" y="70" text-anchor="middle" fill="var(--text-muted)" font-size="10">3 ms (cached) / 22 ms (fwd)</text>
+
+    <text x="490" y="58" fill="var(--text-muted)" font-size="16">&rarr;</text>
+
+    <rect x="506" y="30" width="120" height="50" rx="8" fill="var(--surface)" stroke="var(--success)" stroke-width="1.5"/>
+    <text x="566" y="52" text-anchor="middle" fill="var(--success)" font-size="12" font-weight="600">send_action</text>
+    <text x="566" y="70" text-anchor="middle" fill="var(--text-muted)" font-size="11">~0.2 ms</text>
+
+    <!-- Budget bar -->
+    <text x="20" y="120" fill="var(--text)" font-size="12" font-weight="600">33 ms budget (30 Hz)</text>
+    <rect x="20" y="130" width="660" height="24" rx="6" fill="var(--surface)" stroke="var(--border)"/>
+    <!-- Used portion -->
+    <rect x="22" y="132" width="100" height="20" rx="4" fill="rgba(79,140,255,0.3)"/>
+    <text x="72" y="146" text-anchor="middle" fill="var(--primary)" font-size="10" font-weight="600">~5 ms used</text>
+    <!-- Idle portion -->
+    <text x="400" y="146" text-anchor="middle" fill="var(--text-muted)" font-size="10">28 ms idle (normal for ACT)</text>
+
+    <!-- Conclusion -->
+    <rect x="20" y="175" width="660" height="70" rx="8" fill="var(--surface)" stroke="var(--border)"/>
+    <text x="350" y="200" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="600">Conclusion: the bottleneck is NOT compute</text>
+    <text x="350" y="225" text-anchor="middle" fill="var(--text-muted)" font-size="12">Performance is fine. The robot misses because the POLICY learned wrong things.</text>
+  </svg>
+</div>
+
+<!-- ========== SLIDE 12: BUG #3 — CAUSAL CONFOUNDING ========== -->
+<div class="slide" data-notes="Bug three is subtle and devastating. During recording, the leader arm is visible in the camera frame. The policy learns a shortcut: instead of looking at the block, it looks at the leader arm. At inference time, the leader arm is removed. The policy sees something unfamiliar and outputs random actions. The fix is simple: physically reposition cameras so the leader arm is never in frame. But detecting this required carefully reviewing the recorded dataset frame by frame.">
+  <h2><span class="tag tag-danger" style="font-size:1rem;">BUG #3</span> Causal Confounding</h2>
+  <p style="margin-bottom:1.25rem;">The policy learned to cheat</p>
+  <div class="two-col">
+    <div>
+      <div class="card card-accent-danger">
+        <h3 style="color:var(--danger)">What Happened</h3>
+        <p>Leader arm visible in camera during teleoperation recording. Policy learns a shortcut: <strong>track the leader arm</strong>, not the block.</p>
+      </div>
+      <div class="card card-accent-danger">
+        <h3 style="color:var(--danger)">At Inference</h3>
+        <p>Leader arm is absent. Policy sees an unfamiliar scene. Output: <strong>random, erratic movements</strong>.</p>
+      </div>
+      <div class="card card-accent-success">
+        <h3 style="color:var(--success)">Fix</h3>
+        <p>Reposition cameras so the leader arm is <strong>never in frame</strong>. Re-record entire dataset.</p>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 300" width="100%">
+        <!-- Training frame -->
+        <text x="160" y="18" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600">Training (recording)</text>
+        <rect x="20" y="25" width="280" height="110" rx="8" fill="var(--surface)" stroke="var(--danger)" stroke-width="1.5"/>
+        <text x="35" y="48" fill="var(--text-muted)" font-size="10">Camera view</text>
+        <!-- Block -->
+        <rect x="60" y="80" width="25" height="25" rx="3" fill="var(--danger)" opacity="0.6"/>
+        <text x="72" y="97" text-anchor="middle" fill="white" font-size="9">B</text>
+        <!-- Leader arm (BAD) -->
+        <rect x="180" y="55" width="80" height="60" rx="4" fill="rgba(239,68,68,0.2)" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="4 2"/>
+        <text x="220" y="80" text-anchor="middle" fill="var(--danger)" font-size="10" font-weight="600">LEADER</text>
+        <text x="220" y="95" text-anchor="middle" fill="var(--danger)" font-size="9">ARM</text>
+        <!-- Attention arrow pointing to leader -->
+        <path d="M 140 90 Q 160 75 180 80" fill="none" stroke="var(--warning)" stroke-width="2"/>
+        <polygon points="180,80 174,74 176,83" fill="var(--warning)"/>
+        <text x="150" y="70" fill="var(--warning)" font-size="9">attention</text>
+
+        <!-- Inference frame -->
+        <text x="160" y="165" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600">Inference (deployment)</text>
+        <rect x="20" y="172" width="280" height="110" rx="8" fill="var(--surface)" stroke="var(--success)" stroke-width="1.5"/>
+        <text x="35" y="195" fill="var(--text-muted)" font-size="10">Camera view</text>
+        <!-- Block -->
+        <rect x="60" y="227" width="25" height="25" rx="3" fill="var(--danger)" opacity="0.6"/>
+        <text x="72" y="244" text-anchor="middle" fill="white" font-size="9">B</text>
+        <!-- No leader arm -->
+        <rect x="180" y="200" width="80" height="60" rx="4" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4 2"/>
+        <text x="220" y="228" text-anchor="middle" fill="var(--text-muted)" font-size="10">GONE</text>
+        <text x="220" y="244" text-anchor="middle" fill="var(--text-muted)" font-size="9">(no leader)</text>
+        <!-- Confused arrow -->
+        <text x="150" y="220" fill="var(--danger)" font-size="10">???</text>
+        <path d="M 140 230 Q 150 210 160 235 Q 170 215 175 240" fill="none" stroke="var(--danger)" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 13: BUG #4 — CALIBRATION DRIFT ========== -->
+<div class="slide" data-notes="This is the aha moment. Bug four. We built compare_leader_follower.py, which reads the same dataset and compares the leader and follower joint positions frame by frame. It revealed a 17.5 degree offset on the wrist_flex joint. At the gripper, that translates to approximately 6 to 7 centimeters of systematic error. The policy was learning to move to the right place, but the follower was executing the wrong position. After recalibration, the offset dropped to 0.85 degrees. Success rate went from zero to 80 percent. Calibration was the root cause all along.">
+  <h2><span class="tag tag-danger" style="font-size:1rem;">BUG #4</span> Calibration Drift <span class="tag tag-warning" style="font-size:0.85rem;">AHA MOMENT</span></h2>
+  <p style="margin-bottom:1.25rem;">The root cause of everything</p>
+  <div class="card-row">
+    <div class="card metric metric-danger">
+      <div class="value">17.5&deg;</div>
+      <div class="label">wrist_flex offset (before)</div>
+    </div>
+    <div class="card metric metric-warning">
+      <div class="value">~6-7 cm</div>
+      <div class="label">systematic gripper error</div>
+    </div>
+    <div class="card metric metric-success">
+      <div class="value">0.85&deg;</div>
+      <div class="label">wrist_flex offset (after)</div>
+    </div>
+  </div>
+  <div class="two-col" style="margin-top:1rem;">
+    <div>
+      <pre><code><span class="code-comment"># compare_leader_follower.py output</span>
+
+Joint          Mean |diff|  Max |diff|
+───────────────────────────────────
+shoulder_pan     1.2&deg;        3.1&deg;
+shoulder_lift    0.9&deg;        2.4&deg;
+elbow_flex       1.1&deg;        2.8&deg;
+wrist_flex      <span class="code-danger">17.5&deg;</span>       <span class="code-danger">22.3&deg;</span>
+wrist_roll       0.7&deg;        1.9&deg;
+gripper          2.3&deg;        4.1&deg;
+
+<span class="code-danger">WARNING: wrist_flex exceeds 5&deg; threshold!</span>
+<span class="code-highlight">Recalibrate this joint.</span></code></pre>
+    </div>
+    <div>
+      <div class="card card-accent-success">
+        <h3>Impact of Recalibration</h3>
+        <table>
+          <thead><tr><th>Metric</th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            <tr><td>wrist_flex offset</td><td style="color:var(--danger)">17.5&deg;</td><td style="color:var(--success)">0.85&deg;</td></tr>
+            <tr><td>Gripper accuracy</td><td style="color:var(--danger)">&plusmn;6-7 cm</td><td style="color:var(--success)">&plusmn;0.3 cm</td></tr>
+            <tr><td>Grasp success</td><td style="color:var(--danger)">0%</td><td style="color:var(--success)">80%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-success">
+        <strong>Lesson:</strong> No amount of training, bigger models, or more epochs can fix a calibration error. Always verify hardware first.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 14: BUG #5 — DISTRIBUTION SHIFT ========== -->
+<div class="slide" data-notes="Bug five. We trained in morning light and deployed in the afternoon. Same robot, same block, same position. But the lighting changed: warmer afternoon sun, different shadows. The policy failed because it had overfitted to the morning lighting conditions. The fix is image augmentation. LeRobot has a built-in ImageTransformsConfig with brightness, contrast, saturation, and hue jitter. Enable it with one flag. But be careful: if your task depends on color, like grabbing the RED block, you should disable hue jitter.">
+  <h2><span class="tag tag-danger" style="font-size:1rem;">BUG #5</span> Distribution Shift</h2>
+  <p style="margin-bottom:1rem;">Morning light training, afternoon deployment</p>
+  <div class="two-col">
+    <div>
+      <div class="card card-accent-danger">
+        <h3 style="color:var(--danger)">Same Robot. Same Block. Different Light.</h3>
+        <p>Policy trained with morning lighting fails in afternoon conditions. Shadows change, color temperature shifts, white balance differs.</p>
+      </div>
+      <div class="card card-accent-success">
+        <h3 style="color:var(--success)">Fix: Image Augmentation</h3>
+        <pre><code><span class="code-comment"># Enable built-in transforms</span>
+lerobot-train \
+  <span class="code-highlight">--training.image_transforms.enable=true</span> \
+  ...</code></pre>
+        <p style="margin-top:0.75rem; font-size:0.95rem;">Default augmentations:</p>
+        <ul style="font-size:0.9rem;">
+          <li>Brightness: (0.8, 1.2)</li>
+          <li>Contrast: (0.8, 1.2)</li>
+          <li>Saturation: (0.5, 1.5)</li>
+          <li>Hue: (-0.05, 0.05)</li>
+          <li>Sharpness jitter</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 320 200" width="100%">
+        <!-- Morning scene -->
+        <rect x="10" y="10" width="140" height="85" rx="8" fill="#1a1a2e" stroke="var(--primary)" stroke-width="1.5"/>
+        <text x="80" y="30" text-anchor="middle" fill="var(--primary)" font-size="10" font-weight="600">TRAINING</text>
+        <!-- Cool light indicator -->
+        <circle cx="120" cy="55" r="15" fill="rgba(79,140,255,0.2)" stroke="var(--primary)" stroke-width="1"/>
+        <text x="120" y="59" text-anchor="middle" fill="var(--primary)" font-size="9">AM</text>
+        <rect x="40" y="60" width="20" height="20" rx="3" fill="var(--danger)" opacity="0.7"/>
+        <text x="80" y="85" text-anchor="middle" fill="var(--success)" font-size="10">Works</text>
+
+        <!-- Afternoon scene -->
+        <rect x="170" y="10" width="140" height="85" rx="8" fill="#1a1a2e" stroke="var(--danger)" stroke-width="1.5"/>
+        <text x="240" y="30" text-anchor="middle" fill="var(--danger)" font-size="10" font-weight="600">DEPLOYMENT</text>
+        <!-- Warm light indicator -->
+        <circle cx="280" cy="55" r="15" fill="rgba(245,158,11,0.2)" stroke="var(--warning)" stroke-width="1"/>
+        <text x="280" y="59" text-anchor="middle" fill="var(--warning)" font-size="9">PM</text>
+        <rect x="200" y="60" width="20" height="20" rx="3" fill="var(--danger)" opacity="0.4"/>
+        <text x="240" y="85" text-anchor="middle" fill="var(--danger)" font-size="10">Fails</text>
+
+        <!-- Arrow -->
+        <text x="160" y="55" text-anchor="middle" fill="var(--text-muted)" font-size="18">&ne;</text>
+      </svg>
+
+      <div class="callout callout-warning" style="margin-top:1rem;">
+        <strong>Caution:</strong> If your task relies on <strong>color</strong> (e.g., "red block"), <strong>disable hue jitter</strong> to prevent the model from becoming color-invariant.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 15: TOOLS WE BUILT ========== -->
+<div class="slide" data-notes="We built four diagnostic tools. compare_leader_follower.py reads the dataset and computes per-joint offset between leader and follower. evaluate_dataset_quality.py uses IQR-based outlier detection to flag noisy episodes. read_leader_pos.py and read_follower_pos.py are for static calibration checks: put the robot in a known position and verify the readings. About 600 lines of Python total, zero additional dependencies. These tools saved the project.">
+  <h2>Tools We Built</h2>
+  <p style="margin-bottom:1.25rem;">~600 lines Python, zero additional dependencies</p>
+  <div class="card-row">
+    <div class="card card-accent-top">
+      <h3>compare_leader_follower.py</h3>
+      <p>Reads existing dataset, computes per-joint offset between leader and follower. Flags joints exceeding 5&deg; threshold.</p>
+      <span class="tag tag-primary">Drift Detection</span>
+    </div>
+    <div class="card card-accent-top">
+      <h3>evaluate_dataset_quality.py</h3>
+      <p>Outlier detection via IQR on joint velocities and positions. Flags noisy or inconsistent episodes.</p>
+      <span class="tag tag-primary">Quality Check</span>
+    </div>
+  </div>
+  <div class="card-row">
+    <div class="card card-accent-top">
+      <h3>read_leader_pos.py</h3>
+      <p>Static calibration check for leader arm. Place in known position, verify encoder readings match expected values.</p>
+      <span class="tag tag-primary">Calibration</span>
+    </div>
+    <div class="card card-accent-top">
+      <h3>read_follower_pos.py</h3>
+      <p>Same static check for follower arm. Compare with leader readings to detect systematic offsets.</p>
+      <span class="tag tag-primary">Calibration</span>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:0.5rem;">
+    <strong>Key insight:</strong> The dataset is your ground truth. If the recorded data is wrong, no model can fix it. Build tools that interrogate the dataset, not just the robot.
+  </div>
+</div>
+
+<!-- ========== SLIDE 16: READING TRAINING METRICS ========== -->
+<div class="slide" data-notes="Understanding what the loss number actually means. l1_loss of 0.068 means the average prediction error is 6.8 percent of the joint motion range. For a typical servo range, that is about 12 degrees per joint. At the gripper, that translates to 6 to 7 centimeters of positional error. For a reliable grasp of a 3cm block, you need l1_loss under 0.03. That was our target, and after fixing calibration and adding better data, we hit it.">
+  <h2>Reading Training Metrics</h2>
+  <p style="margin-bottom:1rem;">What <code>l1_loss</code> actually means for your robot</p>
+  <div class="card-row" style="margin-bottom:1.5rem;">
+    <div class="card metric metric-warning">
+      <div class="value">0.068</div>
+      <div class="label">l1_loss (initial training)</div>
+    </div>
+    <div class="card metric metric-warning">
+      <div class="value">~12&deg;</div>
+      <div class="label">per-joint error</div>
+    </div>
+    <div class="card metric metric-danger">
+      <div class="value">~6-7 cm</div>
+      <div class="label">gripper positional error</div>
+    </div>
+  </div>
+  <svg viewBox="0 0 700 170" width="100%">
+    <!-- Loss scale bar -->
+    <defs>
+      <linearGradient id="lossGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#22c55e"/>
+        <stop offset="40%" style="stop-color:#f59e0b"/>
+        <stop offset="100%" style="stop-color:#ef4444"/>
+      </linearGradient>
+    </defs>
+    <text x="20" y="25" fill="var(--text)" font-size="13" font-weight="600">l1_loss scale and what it means</text>
+    <rect x="20" y="40" width="660" height="30" rx="8" fill="url(#lossGrad)" opacity="0.3"/>
+    <rect x="20" y="40" width="660" height="30" rx="8" fill="none" stroke="var(--border)"/>
+
+    <!-- Markers -->
+    <line x1="220" y1="38" x2="220" y2="75" stroke="var(--success)" stroke-width="2"/>
+    <text x="220" y="90" text-anchor="middle" fill="var(--success)" font-size="11" font-weight="600">0.03</text>
+    <text x="220" y="105" text-anchor="middle" fill="var(--success)" font-size="10">reliable grasp</text>
+
+    <line x1="460" y1="38" x2="460" y2="75" stroke="var(--warning)" stroke-width="2"/>
+    <text x="460" y="90" text-anchor="middle" fill="var(--warning)" font-size="11" font-weight="600">0.068</text>
+    <text x="460" y="105" text-anchor="middle" fill="var(--warning)" font-size="10">our initial result</text>
+
+    <line x1="600" y1="38" x2="600" y2="75" stroke="var(--danger)" stroke-width="2"/>
+    <text x="600" y="90" text-anchor="middle" fill="var(--danger)" font-size="11" font-weight="600">0.10+</text>
+    <text x="600" y="105" text-anchor="middle" fill="var(--danger)" font-size="10">random motion</text>
+
+    <!-- Scale labels -->
+    <text x="20" y="130" fill="var(--text-muted)" font-size="10">0.00</text>
+    <text x="668" y="130" fill="var(--text-muted)" font-size="10">0.15</text>
+
+    <!-- Conversion -->
+    <rect x="20" y="140" width="660" height="24" rx="6" fill="var(--surface)" stroke="var(--border)"/>
+    <text x="350" y="157" text-anchor="middle" fill="var(--text-muted)" font-size="11">l1_loss x servo_range (180&deg;) = per-joint error &rarr; kinematic chain &rarr; gripper error</text>
+  </svg>
+</div>
+
+<!-- ========== SLIDE 17: HARD EXAMPLE MINING ========== -->
+<div class="slide" data-notes="After calibration fix and augmentation, we were at 80 percent success rate for horizontal grasps. But only 20 percent for rotated blocks. Why? Only 5 percent of the dataset contained rotation scenarios. The rule of thumb from the community is 15 to 20 percent representation for a skill to be learned reliably. We added 25 rotation-focused episodes, which brought representation from 5 to 17 percent. Success on rotation jumped from 20 to about 70 percent.">
+  <h2>Hard Example Mining</h2>
+  <p style="margin-bottom:1rem;">When 80% works and 20% doesn't, check the dataset</p>
+  <div class="card-row">
+    <div class="card metric metric-success">
+      <div class="value">80%</div>
+      <div class="label">horizontal grasp success</div>
+    </div>
+    <div class="card metric metric-danger">
+      <div class="value">20%</div>
+      <div class="label">rotated block success</div>
+    </div>
+    <div class="card metric metric-warning">
+      <div class="value">5%</div>
+      <div class="label">rotation examples in dataset</div>
+    </div>
+  </div>
+  <div class="two-col" style="margin-top:1.25rem;">
+    <div>
+      <svg viewBox="0 0 300 200" width="100%">
+        <text x="150" y="20" text-anchor="middle" fill="var(--text)" font-size="12" font-weight="600">Dataset Composition</text>
+        <!-- Before bar -->
+        <text x="10" y="55" fill="var(--text-muted)" font-size="11">Before</text>
+        <rect x="60" y="40" width="220" height="24" rx="6" fill="var(--surface)" stroke="var(--border)"/>
+        <rect x="62" y="42" width="209" height="20" rx="4" fill="rgba(79,140,255,0.3)"/>
+        <rect x="62" y="42" width="11" height="20" rx="4" fill="rgba(239,68,68,0.4)"/>
+        <text x="170" y="57" text-anchor="middle" fill="var(--primary)" font-size="9">95% horizontal</text>
+        <text x="68" y="57" fill="var(--danger)" font-size="8">5%</text>
+
+        <!-- After bar -->
+        <text x="10" y="95" fill="var(--text-muted)" font-size="11">After</text>
+        <rect x="60" y="80" width="220" height="24" rx="6" fill="var(--surface)" stroke="var(--border)"/>
+        <rect x="62" y="82" width="183" height="20" rx="4" fill="rgba(79,140,255,0.3)"/>
+        <rect x="62" y="82" width="37" height="20" rx="4" fill="rgba(34,197,94,0.4)"/>
+        <text x="170" y="97" text-anchor="middle" fill="var(--primary)" font-size="9">83% horizontal</text>
+        <text x="80" y="97" fill="var(--success)" font-size="8">17%</text>
+
+        <!-- Threshold line -->
+        <line x1="93" y1="115" x2="93" y2="130" stroke="var(--warning)" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <text x="93" y="145" text-anchor="middle" fill="var(--warning)" font-size="10">15-20% threshold</text>
+        <text x="93" y="160" text-anchor="middle" fill="var(--text-muted)" font-size="9">for reliable learning</text>
+
+        <!-- Added episodes -->
+        <rect x="60" y="175" width="220" height="20" rx="6" fill="var(--surface)" stroke="var(--success)" stroke-width="1"/>
+        <text x="170" y="190" text-anchor="middle" fill="var(--success)" font-size="10">+25 rotation-focused episodes</text>
+      </svg>
+    </div>
+    <div>
+      <div class="card card-accent-success">
+        <h3>Results After Mining</h3>
+        <table>
+          <thead><tr><th>Scenario</th><th>Before</th><th>After</th></tr></thead>
+          <tbody>
+            <tr><td>Horizontal grasp</td><td>80%</td><td style="color:var(--success)">82%</td></tr>
+            <tr><td>Rotated block</td><td style="color:var(--danger)">20%</td><td style="color:var(--success)">~70%</td></tr>
+            <tr><td>Rotation % in data</td><td>5%</td><td style="color:var(--success)">17%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout" style="margin-top:1rem;">
+        <strong>Rule of thumb:</strong> If a scenario has less than 15-20% representation in your dataset, the policy will not learn it reliably. Mine for hard examples and oversample them.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 18: DATASET VIZ ========== -->
+<div class="slide" data-notes="[DEMO] Here I'll show a quick dataset visualization using Rerun. You can see all three camera streams synchronized with the joint positions over time. The lerobot-dataset-viz command renders this. Scrubbing through episodes lets you spot calibration errors, leader arm visibility, and motion anomalies. This is the single most useful debugging tool in the entire pipeline.">
+  <h2>Dataset Visualization</h2>
+  <p style="margin-bottom:1rem;">Your most powerful debugging tool: <code>lerobot-dataset-viz</code></p>
+  <div class="placeholder">
+    <div class="placeholder-icon">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><circle cx="7" cy="10" r="1.5"/><circle cx="12" cy="10" r="1.5"/><circle cx="17" cy="10" r="1.5"/></svg>
+    </div>
+    <p><strong>LIVE DEMO</strong></p>
+    <p style="margin-top:0.5rem;">Rerun visualization: 3 camera streams + joint positions + episode timeline</p>
+  </div>
+  <div class="card-row">
+    <div class="card">
+      <h3>What to look for</h3>
+      <ul>
+        <li>Leader arm visibility in camera frames</li>
+        <li>Joint position discontinuities</li>
+        <li>Timing synchronization across cameras</li>
+        <li>Gripper open/close at correct moments</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Command</h3>
+      <pre><code>lerobot-dataset-viz \
+  --repo-id smaestri/so101_pick \
+  --episode-index 0</code></pre>
+      <p style="margin-top:0.75rem; font-size:0.9rem; color:var(--text-muted);">Requires <code>pip install 'lerobot[viz]'</code></p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 19: ROBOT DEMO ========== -->
+<div class="slide" data-notes="[VIDEO] Let's watch the robot in action. First a successful grasp: the arm reaches for the block, closes the gripper, lifts, moves to the box, and releases. Then a failure: the block is rotated 45 degrees and the gripper misaligns. This is from before we added the rotation examples. Honesty about failures is how we learn. [Play 30-second video clip]">
+  <h2>Robot in Action</h2>
+  <p style="margin-bottom:1rem;">Success and failure &mdash; because both matter</p>
+  <div style="display:flex; justify-content:center;">
+    <iframe width="720" height="405" src="https://www.youtube.com/embed/hs3DzuAmxSQ?start=4" title="SO101 Robot Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:var(--radius); max-width:100%;"></iframe>
+  </div>
+  <div class="card-row" style="margin-top:1rem;">
+    <div class="card card-accent-success" style="text-align:center;">
+      <div class="metric metric-success">
+        <div class="value" style="font-size:2rem;">Success</div>
+        <div class="label">Horizontal block, centered, good light</div>
+      </div>
+    </div>
+    <div class="card card-accent-danger" style="text-align:center;">
+      <div class="metric metric-danger">
+        <div class="value" style="font-size:2rem;">Failure</div>
+        <div class="label">Rotated block, 45&deg; angle, before hard-example fix</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 20: LESSONS LEARNED ========== -->
+<div class="slide" data-notes="Two columns, be honest. What worked: profiling the control loop first, treating the dataset as ground truth, image augmentation for robustness, building diagnostic tools. What didn't work: trying bigger models when the real problem was calibration, running more training epochs when the data distribution was wrong, and removing the wrist camera hoping it would simplify things (it made things worse, the wrist perspective is critical for grasping).">
+  <h2>Lessons Learned</h2>
+  <div class="comparison" style="margin-top:1rem;">
+    <div class="after">
+      <h3 style="color:var(--success); margin-bottom:1rem;">What Worked</h3>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>Profile first, optimize second</strong>
+        <p style="font-size:0.9rem;">The 30Hz loop breakdown revealed that compute was never the bottleneck.</p>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>Dataset as ground truth</strong>
+        <p style="font-size:0.9rem;">Every bug was found by interrogating the recorded data, not the model.</p>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>Image augmentation</strong>
+        <p style="font-size:0.9rem;">One flag (<code>image_transforms.enable=true</code>) fixed lighting sensitivity.</p>
+      </div>
+      <div class="card">
+        <strong>Build diagnostic tools</strong>
+        <p style="font-size:0.9rem;">600 lines of Python saved weeks of guesswork.</p>
+      </div>
+    </div>
+    <div class="before">
+      <h3 style="color:var(--danger); margin-bottom:1rem;">What Didn't Work</h3>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>Bigger models</strong>
+        <p style="font-size:0.9rem;">Switched to SmolVLA when the problem was a 17.5&deg; calibration offset. Model size is irrelevant if the data is wrong.</p>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>More epochs</strong>
+        <p style="font-size:0.9rem;">Trained for 200k steps instead of 100k. Loss plateaued at 0.065. The problem was data distribution, not underfitting.</p>
+      </div>
+      <div class="card" style="margin-bottom:0.75rem;">
+        <strong>Removing wrist camera</strong>
+        <p style="font-size:0.9rem;">Hypothesized fewer inputs = easier learning. Wrong: wrist perspective is critical for fine grasping.</p>
+      </div>
+      <div class="card">
+        <strong>Ignoring hardware</strong>
+        <p style="font-size:0.9rem;">Spent 3 weeks on software when the answer was a recalibration that took 10 minutes.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 21: CYBERWAVE ========== -->
+<div class="slide" data-notes="For those of you thinking 'this sounds painful', there is an easier path. Cyberwave is a platform that handles the painful parts: pre-configured digital twins, cloud training pipelines, automated deployment back to hardware. They have an SO101 tutorial that covers voice-controlled pick and place. What took us weeks of debugging, Cyberwave automates. I'm not saying skip the learning, but if you want production results faster, check it out.">
+  <h2>Cyberwave: The Easier Way</h2>
+  <p style="margin-bottom:1.25rem;">What if the hard parts were automated?</p>
+  <div class="two-col">
+    <div>
+      <div class="card card-accent-secondary">
+        <h3>Platform Overview</h3>
+        <ul>
+          <li><strong>Digital Twins</strong> &mdash; pre-configured simulation environments</li>
+          <li><strong>Cloud Training</strong> &mdash; managed GPU pipeline, no OOM debugging</li>
+          <li><strong>Automated Deployment</strong> &mdash; sim-to-real transfer handled</li>
+          <li><strong>SO101 Support</strong> &mdash; voice-controlled pick-and-place tutorial</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Links</h3>
+        <p style="font-size:0.95rem;"><code>cyberwave.com</code></p>
+        <p style="font-size:0.95rem;"><code>docs.cyberwave.com/tutorials/so101-voice-pick-and-place</code></p>
+      </div>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th>Challenge</th><th>Us (weeks)</th><th>Cyberwave</th></tr></thead>
+        <tbody>
+          <tr><td>Calibration</td><td style="color:var(--danger)">3 weeks</td><td style="color:var(--success)">Auto-detected</td></tr>
+          <tr><td>Camera setup</td><td style="color:var(--danger)">2 days</td><td style="color:var(--success)">Pre-configured</td></tr>
+          <tr><td>Training infra</td><td style="color:var(--warning)">1 day</td><td style="color:var(--success)">Cloud GPU</td></tr>
+          <tr><td>Data augmentation</td><td style="color:var(--warning)">1 day</td><td style="color:var(--success)">Built-in</td></tr>
+          <tr><td>Deployment</td><td style="color:var(--warning)">2 days</td><td style="color:var(--success)">One-click</td></tr>
+          <tr><td>Diagnostics</td><td style="color:var(--danger)">1 week</td><td style="color:var(--success)">Dashboard</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:1rem;">
+        The learning is valuable. But when you need production results, platforms like Cyberwave let you skip the pain and focus on the task.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SLIDE 22: THANK YOU ========== -->
+<div class="slide slide-title" data-notes="Thank you for sitting through the bug parade. The key takeaways: hardware first, always. Profile before optimizing. Your dataset is your ground truth. And sometimes the answer is a 10-minute recalibration, not a bigger model. Happy to take questions. Repo links are on screen.">
+  <div class="event-badge">PyCon 2026</div>
+  <h1 class="gradient-text">Thank You</h1>
+  <p class="subtitle">Questions?</p>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem; margin-top:1rem;">
+    <div class="card" style="display:inline-block; padding:1rem 2rem; text-align:center;">
+      <p style="font-size:1rem; margin-bottom:0.5rem;"><strong>Stefano Maestri</strong></p>
+      <p style="font-size:0.9rem; color:var(--text-muted);">
+        <code>github.com/huggingface/lerobot</code>
+      </p>
+      <p style="font-size:0.9rem; color:var(--text-muted);">
+        <code>cyberwave.com</code>
+      </p>
+    </div>
+  </div>
+  <p class="closing-tagline">
+    "Built with love, frustration, and a 17.5&deg; calibration drift."
+  </p>
+</div>
+
+</div><!-- end #deck -->
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+(function () {
+  'use strict';
+
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  const counter = document.getElementById('slide-counter');
+  const progressBar = document.getElementById('progress-bar');
+  const notesPanel = document.getElementById('notes-panel');
+  const notesContent = document.getElementById('notes-content');
+  let current = 0;
+  let notesVisible = false;
+
+  // ---- Read initial slide from URL hash ----
+  function readHash() {
+    const m = location.hash.match(/^#slide-(\d+)$/);
+    if (m) {
+      const idx = parseInt(m[1], 10) - 1;
+      if (idx >= 0 && idx < total) current = idx;
+    }
+  }
+
+  function updateHash() {
+    history.replaceState(null, '', '#slide-' + (current + 1));
+  }
+
+  function updateUI() {
+    slides.forEach((s, i) => {
+      if (i === current) {
+        s.classList.add('active');
+        s.classList.remove('slide-exit');
+      } else {
+        s.classList.remove('active');
+      }
+    });
+    counter.textContent = (current + 1) + ' / ' + total;
+    progressBar.style.width = ((current + 1) / total * 100) + '%';
+    updateHash();
+    updateNotes();
+  }
+
+  function updateNotes() {
+    const note = slides[current].getAttribute('data-notes') || 'No notes for this slide.';
+    notesContent.textContent = note;
+  }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= total || idx === current) return;
+    current = idx;
+    updateUI();
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  function toggleNotes() {
+    notesVisible = !notesVisible;
+    notesPanel.classList.toggle('visible', notesVisible);
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  // ---- Keyboard ----
+  document.addEventListener('keydown', function (e) {
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+      case ' ':
+      case 'PageDown':
+        e.preventDefault();
+        next();
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+      case 'PageUp':
+        e.preventDefault();
+        prev();
+        break;
+      case 'Home':
+        e.preventDefault();
+        goTo(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        goTo(total - 1);
+        break;
+      case 'n':
+      case 'N':
+        toggleNotes();
+        break;
+      case 'f':
+      case 'F':
+        toggleFullscreen();
+        break;
+    }
+  });
+
+  // ---- Nav arrows ----
+  document.getElementById('nav-prev').addEventListener('click', prev);
+  document.getElementById('nav-next').addEventListener('click', next);
+
+  // ---- Touch / swipe ----
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  document.addEventListener('touchstart', function (e) {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function (e) {
+    const dx = e.changedTouches[0].screenX - touchStartX;
+    const dy = e.changedTouches[0].screenY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0) next(); else prev();
+    }
+  }, { passive: true });
+
+  // ---- Hash change ----
+  window.addEventListener('hashchange', function () {
+    readHash();
+    updateUI();
+  });
+
+  // ---- Init ----
+  readHash();
+  updateUI();
+})();
+</script>
+</body>
+</html>

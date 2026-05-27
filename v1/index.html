@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From LeRobot to Real Robots | PyCon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #1e1e3a;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --primary: #4f8cff;
+      --secondary: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .event-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--primary);
+      letter-spacing: 0.03em;
+      margin-bottom: 2rem;
+    }
+
+    .event-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--text) 0%, var(--primary) 50%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 300;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      line-height: 1.5;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .meta-item .icon {
+      width: 18px;
+      height: 18px;
+      opacity: 0.6;
+    }
+
+    .meta-item strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .abstract-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .abstract-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .abstract-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .abstract-card p {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .speaker {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .speaker-avatar {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .speaker-info .name {
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .speaker-info .role {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.85rem 2rem;
+      border-radius: var(--radius);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .cta-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(79, 140, 255, 0.25);
+    }
+
+    .cta-link svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.15s ease;
+    }
+
+    .cta-link:hover svg {
+      transform: translateX(3px);
+    }
+
+    .format-tag {
+      display: inline-block;
+      margin-top: 1.25rem;
+      margin-left: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 1.25rem; }
+      .meta-row { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="event-badge">
+      <span class="dot"></span>
+      PyCon 2026
+    </div>
+
+    <h1>From LeRobot to Real Robots</h1>
+    <p class="subtitle">What They Don't Tell You About Making a Robot Arm Grab Things</p>
+
+    <div class="meta-row">
+      <div class="meta-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>30 minutes</span>
+      </div>
+      <div class="meta-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        <span><strong>Technical Deep-Dive</strong></span>
+      </div>
+      <div class="meta-item">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span>V1 &mdash; Full Bug Parade</span>
+      </div>
+    </div>
+
+    <div class="speaker">
+      <div class="speaker-avatar">SM</div>
+      <div class="speaker-info">
+        <div class="name">Stefano Maestri</div>
+        <div class="role">Software Engineer &amp; Robotics Tinkerer</div>
+      </div>
+    </div>
+
+    <div class="abstract-card">
+      <div class="abstract-label">Abstract</div>
+      <p>
+        A software engineer's deep-dive into robot learning with LeRobot and SO101.
+        From calibration nightmares to working grasp policies &mdash; every bug, every fix,
+        every lesson. This talk walks through the real experience of teaching a budget robot
+        arm to grab things: what went wrong, what we measured, and what actually worked.
+      </p>
+    </div>
+
+    <a class="cta-link" href="presentation/slides.html">
+      Open Slides
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+    <span class="format-tag">30 minutes &middot; Technical Deep-Dive</span>
+  </div>
+</body>
+</html>

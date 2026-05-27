@@ -1,0 +1,6 @@
+.obsidian/
+.DS_Store
+*.mp4
+*.mov
+*.avi
+node_modules/

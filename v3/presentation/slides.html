@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From LeRobot to Real Robots | PyCon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================================
+       RESET & VARIABLES
+       ========================================================= */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a14;
+      --surface: #12121f;
+      --border: #1e1e3a;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --primary: #4f8cff;
+      --secondary: #a855f7;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    /* =========================================================
+       BASE
+       ========================================================= */
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      cursor: default;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    code, .mono {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* =========================================================
+       SLIDE CONTAINER
+       ========================================================= */
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 6rem;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .slide-inner {
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* =========================================================
+       TYPOGRAPHY
+       ========================================================= */
+    .slide h1 {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide h2 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+
+    .slide h3 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+      color: var(--primary);
+    }
+
+    .slide p {
+      font-size: 1.35rem;
+      line-height: 1.65;
+      color: var(--text-muted);
+      max-width: 850px;
+    }
+
+    .slide p + p { margin-top: 1rem; }
+
+    .slide ul, .slide ol {
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      padding-left: 1.5rem;
+      max-width: 850px;
+    }
+
+    .slide li { margin-bottom: 0.65rem; }
+    .slide li strong { color: var(--text); font-weight: 600; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .text-muted { color: var(--text-muted); }
+    .text-primary { color: var(--primary); }
+    .text-secondary { color: var(--secondary); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .text-danger { color: var(--danger); }
+    .text-sm { font-size: 1rem; }
+    .text-xs { font-size: 0.85rem; }
+
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .tag--blue  { border-color: rgba(79,140,255,0.3); color: var(--primary); }
+    .tag--purple { border-color: rgba(168,85,247,0.3); color: var(--secondary); }
+    .tag--green  { border-color: rgba(34,197,94,0.25); color: var(--success); }
+    .tag--red    { border-color: rgba(239,68,68,0.3); color: var(--danger); }
+    .tag--amber  { border-color: rgba(245,158,11,0.3); color: var(--warning); }
+
+    /* =========================================================
+       CARDS & BOXES
+       ========================================================= */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card--accent {
+      border-left: 3px solid var(--primary);
+    }
+
+    .card--danger {
+      border-left: 3px solid var(--danger);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .card--success {
+      border-left: 3px solid var(--success);
+      background: rgba(34, 197, 94, 0.04);
+    }
+
+    .card--warning {
+      border-left: 3px solid var(--warning);
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.6rem;
+    }
+
+    .card p, .card li {
+      font-size: 1.1rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* =========================================================
+       CODE BLOCKS
+       ========================================================= */
+    .code-block {
+      background: #0d0d1a;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .code-block .comment { color: #6b7280; }
+    .code-block .keyword { color: var(--secondary); }
+    .code-block .string  { color: var(--success); }
+    .code-block .number  { color: var(--warning); }
+    .code-block .fn      { color: var(--primary); }
+
+    .inline-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88em;
+      background: rgba(79, 140, 255, 0.1);
+      padding: 0.15em 0.45em;
+      border-radius: 6px;
+      color: var(--primary);
+    }
+
+    /* =========================================================
+       SPECIAL ELEMENTS
+       ========================================================= */
+    .big-number {
+      font-size: 8rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .timeline-plan {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.3rem;
+      padding: 1rem 0;
+    }
+
+    .timeline-plan .arrow {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .timeline-plan .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+    }
+
+    .strike {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    .placeholder-box {
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16 / 9;
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin: 1rem auto;
+    }
+
+    .placeholder-box .icon {
+      font-size: 3rem;
+      opacity: 0.4;
+    }
+
+    .placeholder-box p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 2rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* =========================================================
+       CLIMAX SLIDE — 17.5 DEGREES
+       ========================================================= */
+    .climax-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 800px 600px at 50% 40%, rgba(239, 68, 68, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 50% 60%, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .reveal-number {
+      position: relative;
+      display: inline-block;
+      font-size: 12rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--danger), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0.5rem 0;
+    }
+
+    .reveal-number::after {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: radial-gradient(ellipse at center, rgba(239,68,68,0.12) 0%, transparent 70%);
+      z-index: -1;
+      border-radius: 50%;
+    }
+
+    .reveal-unit {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--danger);
+      vertical-align: super;
+      margin-left: 0.2rem;
+    }
+
+    .result-compare {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2rem;
+      justify-content: center;
+    }
+
+    .result-box {
+      padding: 1.5rem 2.5rem;
+      border-radius: var(--radius);
+      text-align: center;
+      min-width: 200px;
+    }
+
+    .result-box--before {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .result-box--after {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    .result-box .val {
+      font-size: 3rem;
+      font-weight: 900;
+    }
+
+    .result-box .lbl {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .result-arrow {
+      display: flex;
+      align-items: center;
+      font-size: 2rem;
+      color: var(--text-muted);
+    }
+
+    /* =========================================================
+       PROGRESS BAR & NAVIGATION
+       ========================================================= */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.35s ease;
+      z-index: 100;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 100;
+    }
+
+    .controls button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      font-size: 0.9rem;
+    }
+
+    .controls button:hover {
+      border-color: var(--primary);
+      color: var(--text);
+      background: rgba(79, 140, 255, 0.08);
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      min-width: 3.5rem;
+      text-align: center;
+    }
+
+    /* =========================================================
+       SPEAKER NOTES OVERLAY
+       ========================================================= */
+    .notes-overlay {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 35vh;
+      overflow-y: auto;
+      background: rgba(10, 10, 20, 0.97);
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2.5rem;
+      z-index: 200;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      backdrop-filter: blur(10px);
+    }
+
+    .notes-overlay.visible { display: block; }
+
+    .notes-overlay h4 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .notes-overlay p { font-size: 1rem; margin-bottom: 0.5rem; max-width: 100%; }
+    .notes-overlay em { color: var(--warning); font-style: normal; font-weight: 600; }
+    .notes-overlay strong { color: var(--text); }
+
+    /* =========================================================
+       KEYBOARD HINT
+       ========================================================= */
+    .keyboard-hint {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 2rem;
+      font-size: 0.72rem;
+      color: rgba(148, 163, 184, 0.4);
+      z-index: 100;
+    }
+
+    .keyboard-hint kbd {
+      display: inline-block;
+      padding: 0.15em 0.4em;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9em;
+      margin: 0 0.15em;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+    @media (max-width: 900px) {
+      .slide { padding: 2rem 2.5rem; }
+      .slide h1 { font-size: 2.2rem; }
+      .slide h2 { font-size: 1.8rem; }
+      .slide p, .slide li { font-size: 1.1rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .reveal-number { font-size: 7rem; }
+      .big-number { font-size: 5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ====================================================
+       SLIDE 1 — TITLE
+       ==================================================== -->
+  <div class="slide active" data-notes="Deliver the opening hook: 'Raise your hand if you've ever watched a YouTube video of a robot doing something incredible and thought: I could build that.' Pause. 'Now keep your hand up if you've actually tried.' Pause. 'This talk is for you.'">
+    <div class="slide-inner" style="text-align:center;">
+      <span class="tag tag--blue">PyCon 2026</span>
+      <h1 style="font-size:3.6rem;">From LeRobot to<br><span class="gradient-text">Real Robots</span></h1>
+      <p style="margin:1rem auto 2.5rem; max-width:650px; font-size:1.3rem;">
+        What they don't tell you about making a robot arm grab things
+      </p>
+      <p style="font-size:1.1rem; color:var(--text-muted); margin-bottom:0.25rem;">
+        A software engineer's honest journey into physical AI
+      </p>
+      <p style="font-size:1rem; color:var(--text-muted);">
+        <strong style="color:var(--text);">Stefano Maestri</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 2 — THE PROMISE
+       ==================================================== -->
+  <div class="slide" data-notes="Build shared optimism. The audience should recognize themselves. Point to the weekend timeline. Get a laugh: 'I even told my partner I'd be done by lunch on Saturday.' This slide is about the UNIVERSAL experience of overconfidence with new tech.">
+    <div class="slide-inner">
+      <span class="tag tag--green">The Setup</span>
+      <h2>The Promise</h2>
+      <p style="margin-bottom:1.5rem;">
+        YouTube: robots folding laundry, cooking eggs, sorting warehouse boxes.<br>
+        Papers: "straightforward training pipeline."<br>
+        LeRobot README: "simple, accessible, state-of-the-art."
+      </p>
+
+      <h3>My plan</h3>
+      <div class="timeline-plan">
+        <span class="step">Friday evening<br><span class="text-xs text-muted">unbox & assemble</span></span>
+        <span class="arrow">&rarr;</span>
+        <span class="step">Saturday<br><span class="text-xs text-muted">record data & train</span></span>
+        <span class="arrow">&rarr;</span>
+        <span class="step">Sunday morning<br><span class="text-xs text-muted">deploy & demo</span></span>
+        <span class="arrow">&rarr;</span>
+        <span class="step" style="border-color:var(--success);">Sunday lunch<br><span class="text-xs" style="color:var(--success);">done!</span></span>
+      </div>
+
+      <p class="text-sm text-muted" style="margin-top:1rem; font-style:italic;">
+        Narrator: it was not done by Sunday lunch.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 3 — DAY 1: THE UNBOXING
+       ==================================================== -->
+  <div class="slide" data-notes="Describe the PHYSICAL experience. Specific details sell the story: warped 3D print, wrong motor model, Windows-only firmware tool on Fedora. 'I briefly considered installing Windows. That's how desperate I was.' Emotional beat: mild concern, humor.">
+    <div class="slide-inner">
+      <span class="tag tag--amber">Day 1</span>
+      <h2>The Unboxing</h2>
+      <p style="margin-bottom:1.5rem; font-size:1.4rem;">"How hard can it be?"</p>
+
+      <div class="grid-2">
+        <div class="card card--accent">
+          <div class="card-label">Expected</div>
+          <p>A kit. Some assembly. A couple of USB cables. Done.</p>
+        </div>
+        <div class="card card--danger">
+          <div class="card-label">Reality</div>
+          <p>200+ parts. One warped 3D-printed piece. Two wrong servo motors. A firmware tool that only runs on Windows.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1rem;">
+        <p style="font-size:1.1rem;">
+          The SO-101 kit is open-source hardware at its best and worst.<br>
+          Best: you can fix anything. Worst: <strong>you will need to fix things</strong>.
+        </p>
+      </div>
+
+      <p class="text-sm text-muted" style="margin-top:1rem;">
+        I'm on Fedora. The motor firmware update tool is a Windows .exe.<br>
+        I briefly considered installing Windows. That's how desperate I was.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 4 — DAY 3: IT MOVES!
+       ==================================================== -->
+  <div class="slide" data-notes="This is a GENUINE high point. Let the excitement show. The first time the follower mirrors your movement IS magical. Then immediately undercut: jerky, cameras disconnect, Wayland crashes. 'Welcome to embedded Linux' is a knowing groan.">
+    <div class="slide-inner">
+      <span class="tag tag--green">Day 3</span>
+      <h2>It Moves!</h2>
+      <p style="font-size:1.4rem; margin-bottom:1.5rem; color:var(--text);">
+        The leader arm moves. The follower arm follows.
+      </p>
+      <p style="margin-bottom:2rem;">
+        You move your wrist and a machine six inches away mirrors you in real time.
+        It is, genuinely, <strong style="color:var(--success);">magical</strong>.
+      </p>
+
+      <h3>And then...</h3>
+      <ul>
+        <li>Movements are <strong>jerky</strong> &mdash; some servos lag behind</li>
+        <li>USB cameras <strong>disconnect randomly</strong> after 10 minutes</li>
+        <li>Recording software <strong>crashes on Wayland</strong></li>
+        <li>Display output drops camera FPS from 30 to 8</li>
+      </ul>
+
+      <p style="margin-top:1.5rem; font-size:1.3rem; color:var(--warning); font-weight:600;">
+        Welcome to embedded Linux.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 5 — WEEK 1: RECORDING EPISODES
+       ==================================================== -->
+  <div class="slide" data-notes="IF RUNNING SHORT: abbreviate this slide. Core insight: data collection IS the job, not a step before the job. USB port shuffling is relatable to anyone who has debugged devices. 50 attempts means 50x setup, record, perform, stop. Emotional beat: grinding, determination.">
+    <div class="slide-inner">
+      <span class="tag tag--blue">Week 1</span>
+      <h2>Recording Episodes</h2>
+      <p style="margin-bottom:1.5rem;">
+        50 attempts to grab a red block. Each recording session:
+      </p>
+
+      <ol>
+        <li><strong>Check cameras</strong> &mdash; USB ports shuffle on every reboot. <span class="inline-code">/dev/video0</span> is now <span class="inline-code">/dev/video4</span>. Why? Nobody knows.</li>
+        <li><strong>Check FPS</strong> &mdash; too slow if a display is connected. Run headless.</li>
+        <li><strong>Check recording</strong> &mdash; are we capturing both action AND observation? Both cameras? Is the data actually being written to disk?</li>
+        <li><strong>Perform the grab</strong> &mdash; 15 seconds of careful teleoperation</li>
+        <li><strong>Verify the episode</strong> &mdash; replay the data. Was it clean?</li>
+      </ol>
+
+      <div class="card card--warning" style="margin-top:1.5rem;">
+        <p>
+          <strong>Lesson #1:</strong> Data collection IS the job.<br>
+          Not a step before the job. Not a prerequisite. <em>The job</em>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 6 — WEEK 2: "JUST TRAIN AND DEPLOY"
+       ==================================================== -->
+  <div class="slide" data-notes="Build anticipation: training looks great, loss is low, you deploy... PAUSE before 'and misses. Every. Single. Time.' The systematically-to-the-right detail is important. 'I tried three models. Same result. The problem isn't the model.' Let that line sit. The audience should feel the confusion.">
+    <div class="slide-inner">
+      <span class="tag tag--red">Week 2</span>
+      <h2>"Just Train and Deploy"</h2>
+
+      <div class="grid-2" style="margin-bottom:1.5rem;">
+        <div class="card card--success">
+          <div class="card-label">Training</div>
+          <p>ACT policy. 1 hour on GPU.<br>Loss: <strong style="color:var(--success);">0.08</strong><br>Looks great.</p>
+        </div>
+        <div class="card card--danger">
+          <div class="card-label">Deployment</div>
+          <p>Robot reaches for the block...<br>and <strong style="color:var(--danger);">misses</strong>.<br>Every. Single. Time.</p>
+        </div>
+      </div>
+
+      <p style="margin-bottom:1rem;">
+        Not randomly. <strong>Systematically</strong>. Always 6-7 cm to the right.
+      </p>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <p style="font-size:1rem; color:var(--text-muted);">
+          <span style="color:var(--text);">Maybe the model isn't big enough?</span><br>
+          Try <strong>ACT</strong> &rarr; misses &rarr;
+          Try <strong>Pi0.5</strong> &rarr; misses &rarr;
+          Try <strong>SmolVLA</strong> &rarr; misses
+        </p>
+      </div>
+
+      <p style="font-size:1.4rem; color:var(--text); font-weight:600;">
+        The problem isn't the model.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 7 — THE INVESTIGATION
+       ==================================================== -->
+  <div class="slide" data-notes="Detective work slide. nvidia-smi at 2% is a face-palm moment. Fixing the device doesn't fix accuracy. Build tension: everything LOOKS correct. Timing is fine. Policy is running. WHY? Emotional beat: determination, growing confusion.">
+    <div class="slide-inner">
+      <span class="tag tag--purple">The Investigation</span>
+      <h2>Something Is Wrong</h2>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-label">Clue #1</div>
+        <div class="code-block">
+          <span class="comment">$ nvidia-smi</span><br>
+          GPU utilization: <span class="number">2%</span><br>
+          <br>
+          <span class="comment"># The policy was running on CPU.</span><br>
+          <span class="comment"># Nobody told me.</span>
+        </div>
+      </div>
+
+      <p style="margin-bottom:1rem;">
+        Adding <span class="inline-code">--policy.device=cuda</span> fixes the <em>speed</em>.<br>
+        But the robot still misses.
+      </p>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-label">Clue #2</div>
+        <p style="font-size:1rem;">
+          I add profiling. Each control loop: <strong>5ms</strong>. Policy inference: <strong>fast</strong>.<br>
+          Camera capture: <strong>fine</strong>. Motor commands: <strong>sending correctly</strong>.<br>
+          Everything looks perfect. The robot should work.
+        </p>
+      </div>
+
+      <p style="font-size:1.5rem; color:var(--text); font-weight:700; text-align:center;">
+        WHY doesn't it work?
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 8 — THE 17.5 DEGREES (CLIMAX)
+       ==================================================== -->
+  <div class="slide" data-notes="THIS IS THE MOST IMPORTANT SLIDE. TAKE YOUR TIME. Pause before revealing the number. 'I wrote a 40-line script to compare leader vs follower positions.' 'The answer had been sitting in my data the entire time.' LONG PAUSE. '17.5 degrees.' Let the audience do the math. 'Re-calibrate. Re-record. Re-train. Same policy. Same code.' PAUSE. 'Zero to eighty percent.' Pause 3-5 seconds after the reveal.">
+    <div class="slide-inner" style="text-align:center; position:relative;">
+      <div class="climax-bg"></div>
+
+      <span class="tag tag--red">The Answer</span>
+      <h2 style="color:var(--text-muted); font-weight:500; font-size:1.3rem; margin-bottom:0.5rem;">
+        Wrist motor offset between leader and follower
+      </h2>
+
+      <div class="reveal-number">17.5<span class="reveal-unit">&deg;</span></div>
+
+      <p style="font-size:1.2rem; margin:1rem auto 0.5rem; max-width:700px; color:var(--text);">
+        Every single episode I recorded taught the robot<br>
+        a physically incorrect mapping of the world.
+      </p>
+      <p style="font-size:1rem; margin-bottom:2rem; color:var(--text-muted);">
+        A 40-line Python script found in 3 seconds what I couldn't find in 2 weeks.
+      </p>
+
+      <div class="result-compare">
+        <div class="result-box result-box--before">
+          <div class="val text-danger">0%</div>
+          <div class="lbl">Before recalibration</div>
+        </div>
+        <div class="result-arrow">&rarr;</div>
+        <div class="result-box result-box--after">
+          <div class="val text-success">80%</div>
+          <div class="lbl">After recalibration</div>
+        </div>
+      </div>
+
+      <p class="text-sm text-muted" style="margin-top:1.5rem;">
+        Same policy. Same code. Same hyperparameters.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 9 — THE EMOTIONAL GRAPH
+       ==================================================== -->
+  <div class="slide" data-notes="Breathing slide after the climax. Walk through the emotional arc. Point to the time axis: 'estimated: 1 weekend' vs 'actual: 3+ weeks'. Get a laugh: 'My partner was not impressed.' This validates everyone who has felt the same frustration.">
+    <div class="slide-inner" style="text-align:center;">
+      <span class="tag tag--purple">The Journey</span>
+      <h2 style="margin-bottom:1.5rem;">What It Actually Felt Like</h2>
+
+      <svg viewBox="0 0 900 380" style="width:100%; max-width:900px; margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background grid -->
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#4f8cff"/>
+            <stop offset="35%" stop-color="#22c55e"/>
+            <stop offset="55%" stop-color="#ef4444"/>
+            <stop offset="75%" stop-color="#a855f7"/>
+            <stop offset="100%" stop-color="#22c55e"/>
+          </linearGradient>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4f8cff" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#4f8cff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Y-axis labels -->
+        <text x="10" y="55" fill="#94a3b8" font-family="Inter" font-size="11" font-weight="500">Joy</text>
+        <text x="10" y="180" fill="#94a3b8" font-family="Inter" font-size="11" font-weight="500">Neutral</text>
+        <text x="10" y="300" fill="#94a3b8" font-family="Inter" font-size="11" font-weight="500">Despair</text>
+
+        <!-- Horizontal guide lines -->
+        <line x1="60" y1="50" x2="870" y2="50" stroke="#1e1e3a" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="175" x2="870" y2="175" stroke="#1e1e3a" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="60" y1="295" x2="870" y2="295" stroke="#1e1e3a" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- Area under curve -->
+        <path d="M100,140 C140,130 160,100 220,80 C260,65 310,70 370,90 C420,110 470,200 530,270 C560,290 580,295 610,290 C650,260 680,100 720,65 C750,50 790,55 830,70 L830,320 L100,320 Z"
+              fill="url(#areaGrad)" opacity="0.5"/>
+
+        <!-- Main emotional curve -->
+        <path d="M100,140 C140,130 160,100 220,80 C260,65 310,70 370,90 C420,110 470,200 530,270 C560,290 580,295 610,290 C650,260 680,100 720,65 C750,50 790,55 830,70"
+              fill="none" stroke="url(#lineGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Data points -->
+        <!-- Unboxing -->
+        <circle cx="100" cy="140" r="6" fill="#4f8cff" stroke="#0a0a14" stroke-width="2"/>
+        <text x="100" y="160" fill="#4f8cff" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">Unboxing</text>
+        <text x="100" y="172" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Excitement</text>
+
+        <!-- First movement -->
+        <circle cx="220" cy="80" r="6" fill="#22c55e" stroke="#0a0a14" stroke-width="2"/>
+        <text x="220" y="68" fill="#22c55e" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">It moves!</text>
+        <text x="220" y="56" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Confidence</text>
+
+        <!-- Data collection grind -->
+        <circle cx="370" cy="90" r="6" fill="#f59e0b" stroke="#0a0a14" stroke-width="2"/>
+        <text x="370" y="108" fill="#f59e0b" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">50 episodes</text>
+        <text x="370" y="120" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Grinding</text>
+
+        <!-- Everything misses -->
+        <circle cx="530" cy="270" r="6" fill="#ef4444" stroke="#0a0a14" stroke-width="2"/>
+        <text x="530" y="260" fill="#ef4444" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">3 models fail</text>
+        <text x="530" y="248" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Frustration</text>
+
+        <!-- Lowest point -->
+        <circle cx="605" cy="290" r="6" fill="#ef4444" stroke="#0a0a14" stroke-width="2"/>
+        <text x="605" y="312" fill="#ef4444" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">WHY?</text>
+        <text x="605" y="324" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Despair</text>
+
+        <!-- 17.5 degree breakthrough -->
+        <circle cx="720" cy="65" r="8" fill="#a855f7" stroke="#0a0a14" stroke-width="2.5"/>
+        <text x="720" y="52" fill="#a855f7" font-family="Inter" font-size="11" font-weight="700" text-anchor="middle">17.5&deg;</text>
+        <text x="720" y="40" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Breakthrough</text>
+
+        <!-- 80% success -->
+        <circle cx="830" cy="70" r="6" fill="#22c55e" stroke="#0a0a14" stroke-width="2"/>
+        <text x="830" y="58" fill="#22c55e" font-family="Inter" font-size="10" font-weight="600" text-anchor="middle">80%!</text>
+        <text x="830" y="46" fill="#94a3b8" font-family="Inter" font-size="9" text-anchor="middle">Relief</text>
+
+        <!-- Time axis -->
+        <line x1="60" y1="340" x2="870" y2="340" stroke="#1e1e3a" stroke-width="1"/>
+
+        <!-- Estimated vs actual -->
+        <rect x="80" y="348" width="130" height="22" rx="4" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+        <text x="145" y="363" fill="#22c55e" font-family="JetBrains Mono" font-size="10" font-weight="500" text-anchor="middle">Estimated: 1 weekend</text>
+
+        <rect x="340" y="348" width="530" height="22" rx="4" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.2)" stroke-width="1"/>
+        <text x="605" y="363" fill="#ef4444" font-family="JetBrains Mono" font-size="10" font-weight="500" text-anchor="middle">Actual: 3+ weeks</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 10 — WHAT I LEARNED ABOUT PHYSICAL AI
+       ==================================================== -->
+  <div class="slide" data-notes="IF RUNNING LONG: pick your top 3 and skip the rest. Key message: the gap is ALWAYS wider than you think. 'Loss curves lie' is counterintuitive — explain: '0.08 loss sounds great until you realize it means 6cm of error in the real world.' Don't be preachy. You're sharing, not lecturing.">
+    <div class="slide-inner">
+      <span class="tag tag--blue">Reflections</span>
+      <h2>What I Learned About Physical AI</h2>
+
+      <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:1rem;">
+        <div class="card card--accent">
+          <p><strong>1. Hardware fights back.</strong><br>
+          <span class="text-muted text-sm">Defective parts, firmware quirks, calibration drift. Software has bugs. Hardware has bugs that are also physical objects.</span></p>
+        </div>
+        <div class="card card--accent">
+          <p><strong>2. "The data looks right" doesn't mean "the setup is right."</strong><br>
+          <span class="text-muted text-sm">My data was perfectly formatted, correctly structured, valid in every way. It was also teaching the robot a wrong model of reality.</span></p>
+        </div>
+        <div class="card card--accent">
+          <p><strong>3. Loss curves lie.</strong><br>
+          <span class="text-muted text-sm">0.08 loss with a 17.5&deg; calibration error = 6cm of real-world error. The math was perfect. The physics was wrong.</span></p>
+        </div>
+        <div class="card card--accent">
+          <p><strong>4. Every shortcut becomes a 10x debugging session.</strong><br>
+          <span class="text-muted text-sm">Skip calibration verification? Enjoy two weeks of "why doesn't this work?"</span></p>
+        </div>
+        <div class="card card--accent">
+          <p><strong>5. The gap between paper and robot is ALWAYS wider than you think.</strong><br>
+          <span class="text-muted text-sm">Papers describe the destination. They rarely describe the journey.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 11 — THE TOOLS THAT SAVED ME
+       ==================================================== -->
+  <div class="slide" data-notes="Meta-lesson: diagnostic code is the most impactful code. '600 lines of Python' is intentionally small — that's the point. compare_leader_follower.py found in 3 seconds what you couldn't find in 2 weeks. Actionable: write diagnostic tools BEFORE you debug. Emotional beat: practical empowerment.">
+    <div class="slide-inner">
+      <span class="tag tag--green">The Turning Point</span>
+      <h2>The Tools That Saved Me</h2>
+      <p style="margin-bottom:1.5rem;">
+        Simple Python scripts. ~600 lines total. Changed debugging from<br>
+        <em>"I have intuitions"</em> to <em>"I have data."</em>
+      </p>
+
+      <div class="grid-2">
+        <div class="card card--success">
+          <div class="card-label">compare_leader_follower.py</div>
+          <p style="font-size:1rem;">
+            Compares leader arm positions against follower positions in recorded episodes.
+          </p>
+          <p style="font-size:1rem; margin-top:0.5rem; color:var(--success);">
+            Found the 17.5&deg; offset in <strong>3 seconds</strong>.
+          </p>
+        </div>
+        <div class="card card--success">
+          <div class="card-label">evaluate_dataset_quality.py</div>
+          <p style="font-size:1rem;">
+            Checks for outlier episodes, inconsistent timing, camera drops, and motor anomalies.
+          </p>
+          <p style="font-size:1rem; margin-top:0.5rem; color:var(--success);">
+            Flagged <strong>11 bad episodes</strong> automatically.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem; text-align:center;">
+        <p style="font-size:1.2rem; color:var(--text);">
+          Sometimes the most impactful code you write<br>is the <strong>diagnostic code</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 12 — ROBOT DEMO
+       ==================================================== -->
+  <div class="slide" data-notes="PLAY VIDEO — 90 seconds. Show 2-3 successful grabs with genuine enthusiasm. Show 1 honest failure: 'It's not perfect. It's real.' If video fails: describe what the audience would see. Emotional beat: payoff, satisfaction.">
+    <div class="slide-inner" style="text-align:center;">
+      <span class="tag tag--green">The Payoff</span>
+      <h2>It Works.</h2>
+      <p style="margin-bottom:1.5rem;">90 seconds of a robot arm that finally grabs things.</p>
+
+      <div style="display:flex; justify-content:center;">
+        <iframe width="720" height="405" src="https://www.youtube.com/embed/hs3DzuAmxSQ?start=4" title="SO101 Robot Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; max-width:100%;"></iframe>
+      </div>
+
+      <p class="text-sm text-muted" style="margin-top:1rem; font-style:italic;">
+        It's not perfect. It's real.
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 13 — DATASET VISUALIZATION
+       ==================================================== -->
+  <div class="slide" data-notes="Show screenshot or live Rerun demo. Quickly contrast good episode (smooth trajectories) vs bad (jerky, offset). 'Once you can SEE your data, you can FIX your data.' Don't linger — supporting slide.">
+    <div class="slide-inner" style="text-align:center;">
+      <span class="tag tag--blue">Seeing the Data</span>
+      <h2>Good Episode vs. Bad Episode</h2>
+
+      <div class="grid-2" style="margin:1.5rem 0;">
+        <div>
+          <div class="placeholder-box" style="aspect-ratio:4/3;">
+            <div class="icon" style="font-size:2rem;">&#128202;</div>
+            <p><strong>GOOD EPISODE</strong></p>
+            <p class="text-xs">Smooth trajectories, consistent<br>camera angles, aligned joints</p>
+          </div>
+          <p class="text-sm text-success" style="margin-top:0.5rem; font-weight:600;">Smooth &bull; Consistent &bull; Aligned</p>
+        </div>
+        <div>
+          <div class="placeholder-box" style="aspect-ratio:4/3;">
+            <div class="icon" style="font-size:2rem;">&#128200;</div>
+            <p><strong>BAD EPISODE</strong></p>
+            <p class="text-xs">Jerky motion, motor offset visible,<br>timing inconsistencies</p>
+          </div>
+          <p class="text-sm text-danger" style="margin-top:0.5rem; font-weight:600;">Jerky &bull; Offset &bull; Inconsistent</p>
+        </div>
+      </div>
+
+      <p style="font-size:1.3rem; color:var(--text); font-weight:600;">
+        Once you can <span class="text-primary">see</span> your data, you can <span class="text-success">fix</span> your data.
+      </p>
+      <p class="text-sm text-muted" style="margin-top:0.5rem;">Rerun visualization &mdash; rerun.io</p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 14 — THERE IS AN EASIER WAY
+       ==================================================== -->
+  <div class="slide" data-notes="Frame as: 'After all this, I discovered a platform that handles most of these issues.' Be honest: 'I wish I'd known on Day 1.' Map Cyberwave advantages to YOUR pain: cloud training, pre-configured pipelines, observability. 'Hours instead of weeks' — genuine surprise. Natural, not salesy. Emotional beat: relief, generosity.">
+    <div class="slide-inner">
+      <span class="tag tag--purple">What I Wish I'd Known</span>
+      <h2>There IS an Easier Way</h2>
+      <p style="margin-bottom:1.5rem;">
+        After going through all of this, I discovered a platform that solves<br>
+        most of the problems I spent weeks debugging.
+      </p>
+
+      <div class="card" style="margin-bottom:1rem; border-color:rgba(168,85,247,0.3);">
+        <h3 style="color:var(--secondary);">Cyberwave</h3>
+        <p style="font-size:1rem; margin-bottom:0.75rem;">Same SO-101 robot. Same pick-and-place task. But:</p>
+        <ul style="font-size:1.05rem;">
+          <li><strong>Cloud training</strong> &mdash; no local GPU needed. No CUDA driver dance.</li>
+          <li><strong>Pre-configured pipelines</strong> &mdash; calibration checks built in.</li>
+          <li><strong>Built-in observability</strong> &mdash; see your motor offsets before they become a 2-week mystery.</li>
+          <li><strong>Voice-controlled SO-101 tutorial</strong> &mdash; does in hours what took me weeks.</li>
+        </ul>
+      </div>
+
+      <p style="font-size:1.15rem; color:var(--text-muted); margin-bottom:0.5rem;">
+        I wish I had known about this on <strong style="color:var(--text);">Day 1</strong>.
+      </p>
+
+      <p style="font-size:0.95rem;">
+        <a href="https://docs.cyberwave.com/tutorials/so101-voice-pick-and-place" target="_blank" rel="noopener">
+          docs.cyberwave.com/tutorials/so101-voice-pick-and-place
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 15 — ADVICE FOR THE BRAVE
+       ==================================================== -->
+  <div class="slide" data-notes="Quick hits. Don't belabor. 'Budget 5-10x' gets a knowing laugh. 'The robot doesn't care about your loss curve' is the thesis — deliver with weight. End with encouragement: this IS worth doing. Emotional beat: encouragement, solidarity.">
+    <div class="slide-inner">
+      <span class="tag tag--amber">Advice</span>
+      <h2>For the Brave</h2>
+
+      <div style="display:flex; flex-direction:column; gap:0.6rem; margin-top:1rem;">
+        <div class="card" style="display:flex; align-items:flex-start; gap:1rem;">
+          <span style="font-size:1.8rem; line-height:1; flex-shrink:0; color:var(--primary); font-weight:800;">1</span>
+          <p style="font-size:1.15rem;"><strong>Budget 5&ndash;10x your optimistic estimate.</strong><br>
+          <span class="text-muted text-sm">If you think it's a weekend, plan for a month.</span></p>
+        </div>
+        <div class="card" style="display:flex; align-items:flex-start; gap:1rem;">
+          <span style="font-size:1.8rem; line-height:1; flex-shrink:0; color:var(--primary); font-weight:800;">2</span>
+          <p style="font-size:1.15rem;"><strong>Invest in diagnostics BEFORE bigger models.</strong><br>
+          <span class="text-muted text-sm">A 40-line script beat three state-of-the-art neural networks.</span></p>
+        </div>
+        <div class="card" style="display:flex; align-items:flex-start; gap:1rem;">
+          <span style="font-size:1.8rem; line-height:1; flex-shrink:0; color:var(--primary); font-weight:800;">3</span>
+          <p style="font-size:1.15rem;"><strong>Physical calibration > ML hyperparameters.</strong><br>
+          <span class="text-muted text-sm">No learning rate will fix a 17.5&deg; offset.</span></p>
+        </div>
+        <div class="card" style="display:flex; align-items:flex-start; gap:1rem;">
+          <span style="font-size:1.8rem; line-height:1; flex-shrink:0; color:var(--primary); font-weight:800;">4</span>
+          <p style="font-size:1.15rem;"><strong>Check assumptions with data, not intuition.</strong><br>
+          <span class="text-muted text-sm">Your gut feeling about why it's failing is probably wrong.</span></p>
+        </div>
+        <div class="card" style="display:flex; align-items:flex-start; gap:1rem;">
+          <span style="font-size:1.8rem; line-height:1; flex-shrink:0; color:var(--primary); font-weight:800;">5</span>
+          <p style="font-size:1.15rem;"><strong>The robot doesn't care about your loss curve.</strong><br>
+          <span class="text-muted text-sm">It cares about physical reality. And physical reality always wins.</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       SLIDE 16 — THANK YOU
+       ==================================================== -->
+  <div class="slide" data-notes="Read the closing quote slowly. 'Robot learning is beautiful BECAUSE it forces you to confront reality.' Show contact info. Open for Q&A. Emotional beat: inspiration, openness.">
+    <div class="slide-inner" style="text-align:center;">
+      <div class="card" style="max-width:750px; margin:0 auto 2.5rem; padding:2rem 2.5rem; border-color:rgba(79,140,255,0.2); background:rgba(79,140,255,0.03);">
+        <p style="font-size:1.35rem; line-height:1.7; color:var(--text); font-weight:400;">
+          "Robot learning is beautiful <em style="color:var(--primary); font-style:normal;">because</em>
+          it forces you to confront reality.<br><br>
+          A mathematically perfect model that fails in practice<br>
+          teaches you more than any abstract benchmark."
+        </p>
+      </div>
+
+      <h2 style="margin-bottom:1.5rem;">Thank You</h2>
+
+      <div style="display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; margin-bottom:2rem;">
+        <div style="text-align:left;">
+          <p class="text-sm text-muted" style="margin-bottom:0.25rem;">Speaker</p>
+          <p style="font-size:1rem; font-weight:600;">Stefano Maestri</p>
+        </div>
+        <div style="text-align:left;">
+          <p class="text-sm text-muted" style="margin-bottom:0.25rem;">Email</p>
+          <p style="font-size:1rem;"><a href="mailto:maestri@javalinux.it">maestri@javalinux.it</a></p>
+        </div>
+        <div style="text-align:left;">
+          <p class="text-sm text-muted" style="margin-bottom:0.25rem;">Project</p>
+          <p style="font-size:1rem;"><a href="https://github.com/huggingface/lerobot" target="_blank" rel="noopener">huggingface/lerobot</a></p>
+        </div>
+      </div>
+
+      <p style="font-size:1.5rem; font-weight:700; color:var(--primary);">
+        Q&amp;A
+      </p>
+      <p class="text-sm text-muted" style="margin-top:0.5rem;">5 minutes</p>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ====================================================
+     CONTROLS
+     ==================================================== -->
+<div class="controls">
+  <button id="btnPrev" aria-label="Previous slide" title="Previous slide">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <span class="slide-counter" id="slideCounter">1 / 16</span>
+  <button id="btnNext" aria-label="Next slide" title="Next slide">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<div class="keyboard-hint">
+  <kbd>&larr;</kbd> <kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp;
+  <kbd>N</kbd> notes &nbsp;&middot;&nbsp;
+  <kbd>F</kbd> fullscreen
+</div>
+
+<div class="notes-overlay" id="notesOverlay">
+  <h4>Speaker Notes</h4>
+  <div id="notesContent"></div>
+</div>
+
+<!-- ====================================================
+     JAVASCRIPT
+     ==================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  const slides    = Array.from(document.querySelectorAll('.slide'));
+  const total     = slides.length;
+  const counter   = document.getElementById('slideCounter');
+  const progress  = document.getElementById('progressBar');
+  const notesEl   = document.getElementById('notesOverlay');
+  const notesCont = document.getElementById('notesContent');
+  let current     = 0;
+  let notesOn     = false;
+
+  /* ---- helpers ---- */
+  function show(idx) {
+    if (idx < 0 || idx >= total) return;
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + total;
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    updateNotes();
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  function updateNotes() {
+    const raw = slides[current].getAttribute('data-notes') || '';
+    notesCont.innerHTML = raw
+      ? '<p>' + raw.replace(/\n/g, '</p><p>') + '</p>'
+      : '<p style="opacity:0.4">No notes for this slide.</p>';
+  }
+
+  function toggleNotes() {
+    notesOn = !notesOn;
+    notesEl.classList.toggle('visible', notesOn);
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(function () {});
+    } else {
+      document.exitFullscreen().catch(function () {});
+    }
+  }
+
+  /* ---- events ---- */
+  document.addEventListener('keydown', function (e) {
+    switch (e.key) {
+      case 'ArrowRight': case ' ':       e.preventDefault(); next(); break;
+      case 'ArrowLeft':                   e.preventDefault(); prev(); break;
+      case 'ArrowUp':    case 'Home':     e.preventDefault(); show(0); break;
+      case 'ArrowDown':  case 'End':      e.preventDefault(); show(total - 1); break;
+      case 'n': case 'N':                 toggleNotes(); break;
+      case 'f': case 'F':                 toggleFullscreen(); break;
+      case 'Escape':                      if (notesOn) toggleNotes(); break;
+    }
+  });
+
+  document.getElementById('btnNext').addEventListener('click', next);
+  document.getElementById('btnPrev').addEventListener('click', prev);
+
+  /* touch swipe */
+  let touchX = 0;
+  document.addEventListener('touchstart', function (e) { touchX = e.changedTouches[0].screenX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    const dx = e.changedTouches[0].screenX - touchX;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  /* init */
+  show(0);
+})();
+</script>
+
+</body>
+</html>
