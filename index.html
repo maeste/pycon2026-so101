@@ -94,71 +94,6 @@ h1 {
 .card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; }
 .card ul { color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.8; }
 .card .slides-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; margin-top: 1rem; }
-.vote-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  border: 2px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-.vote-btn:hover { border-color: var(--primary); background: var(--surface); }
-.card.v1 .vote-btn:hover { border-color: var(--primary); }
-.card.v2 .vote-btn:hover { border-color: var(--warning); }
-.card.v3 .vote-btn:hover { border-color: var(--success); }
-.vote-count {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--surface);
-  min-width: 2rem;
-  text-align: center;
-}
-.card.v1 .vote-count { color: var(--primary); }
-.card.v2 .vote-count { color: var(--warning); }
-.card.v3 .vote-count { color: var(--success); }
-.vote-bar {
-  max-width: 1100px;
-  width: 100%;
-  margin-bottom: 2rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem 2rem;
-  text-align: center;
-}
-.vote-bar h2 { font-size: 1.3rem; margin-bottom: 1rem; color: var(--text); }
-.vote-bar-track {
-  display: flex;
-  height: 36px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg);
-}
-.vote-bar-segment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #fff;
-  transition: width 0.5s ease;
-  min-width: 0;
-}
-.vote-bar-segment.seg-v1 { background: var(--primary); }
-.vote-bar-segment.seg-v2 { background: var(--warning); }
-.vote-bar-segment.seg-v3 { background: var(--success); }
-.vote-total { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.75rem; }
 .qr-section {
   max-width: 700px;
   width: 100%;
@@ -209,20 +144,10 @@ footer a { color: var(--primary); text-decoration: none; }
 <body>
   <h1>From LeRobot to Real Robots</h1>
   <p class="subtitle">What they don't tell you about making a robot arm grab things</p>
-  <p class="event-info">PyCon 2026 &middot; 30-minute talk &middot; Vote for your preferred version!</p>
-
-  <div class="vote-bar" id="vote-bar">
-    <h2>Live Vote</h2>
-    <div class="vote-bar-track">
-      <div class="vote-bar-segment seg-v1" id="bar-v1" style="width:33%">V1</div>
-      <div class="vote-bar-segment seg-v2" id="bar-v2" style="width:33%">V2</div>
-      <div class="vote-bar-segment seg-v3" id="bar-v3" style="width:33%">V3</div>
-    </div>
-    <p class="vote-total" id="vote-total">Loading votes...</p>
-  </div>
+  <p class="event-info">PyCon 2026 &middot; 30-minute talk &middot; Choose your version</p>
 
   <div class="versions">
-    <div class="card v1">
+    <a href="v1/index.html" class="card v1">
       <span class="badge">V1 — Technical Deep-Dive</span>
       <h2>Full Bug Parade</h2>
       <p>Comprehensive technical walkthrough of every bug discovered and fixed, with detailed diagnostics.</p>
@@ -233,13 +158,10 @@ footer a { color: var(--primary); text-decoration: none; }
         <li>Cyberwave closing (2 slides)</li>
         <li>Best for: ML/robotics-savvy audiences</li>
       </ul>
-      <a href="https://github.com/maeste/pycon2026-so101/issues/1" target="_blank" class="vote-btn" onclick="event.stopPropagation()">
-        👍 Vote V1 <span class="vote-count" id="count-v1">-</span>
-      </a>
-      <p class="slides-count"><a href="v1/presentation/slides.html" style="color:var(--primary);">Open slides →</a></p>
-    </div>
+      <p class="slides-count">~22 slides &middot; 25 min content + 5 min Q&A</p>
+    </a>
 
-    <div class="card v2">
+    <a href="v2/index.html" class="card v2">
       <span class="badge">V2 — Balanced + Cyberwave</span>
       <h2>Bugs Meet Platform</h2>
       <p>Condensed bug stories focused on the calibration "aha moment", with extended Cyberwave section showing the easier path.</p>
@@ -250,13 +172,10 @@ footer a { color: var(--primary); text-decoration: none; }
         <li>Side-by-side: local vs cloud workflow</li>
         <li>Best for: mixed audience, product-aware</li>
       </ul>
-      <a href="https://github.com/maeste/pycon2026-so101/issues/2" target="_blank" class="vote-btn" onclick="event.stopPropagation()">
-        👍 Vote V2 <span class="vote-count" id="count-v2">-</span>
-      </a>
-      <p class="slides-count"><a href="v2/presentation/slides.html" style="color:var(--warning);">Open slides →</a></p>
-    </div>
+      <p class="slides-count">~18 slides &middot; 25 min content + 5 min Q&A/demo</p>
+    </a>
 
-    <div class="card v3">
+    <a href="v3/index.html" class="card v3">
       <span class="badge">V3 — Personal Journey</span>
       <h2>The Robotics Rollercoaster</h2>
       <p>Narrative-driven: a software engineer's honest story of entering robotics. Less technical, more emotional and relatable.</p>
@@ -267,11 +186,8 @@ footer a { color: var(--primary); text-decoration: none; }
         <li>Cyberwave as "happy ending"</li>
         <li>Best for: general sw engineers, PyCon vibe</li>
       </ul>
-      <a href="https://github.com/maeste/pycon2026-so101/issues/3" target="_blank" class="vote-btn" onclick="event.stopPropagation()">
-        👍 Vote V3 <span class="vote-count" id="count-v3">-</span>
-      </a>
-      <p class="slides-count"><a href="v3/presentation/slides.html" style="color:var(--success);">Open slides →</a></p>
-    </div>
+      <p class="slides-count">~16 slides &middot; 25 min content + 5 min Q&A</p>
+    </a>
   </div>
 
   <div class="qr-section">
@@ -294,61 +210,5 @@ footer a { color: var(--primary); text-decoration: none; }
     <p>Stefano Maestri &middot; <a href="https://github.com/maeste">github.com/maeste</a></p>
     <p>Built with love, frustration, and a 17.5&deg; calibration drift</p>
   </footer>
-
-  <script>
-    const REPO = 'maeste/pycon2026-so101';
-    const ISSUES = { v1: 1, v2: 2, v3: 3 };
-
-    async function fetchVotes() {
-      try {
-        const results = {};
-        for (const [version, issueNum] of Object.entries(ISSUES)) {
-          const resp = await fetch(
-            `https://api.github.com/repos/${REPO}/issues/${issueNum}`,
-            { headers: { 'Accept': 'application/vnd.github.v3+json' } }
-          );
-          if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
-          const data = await resp.json();
-          results[version] = (data.reactions && data.reactions['+1']) || 0;
-        }
-        return results;
-      } catch (e) {
-        console.error('Vote fetch error:', e);
-        return null;
-      }
-    }
-
-    function updateUI(votes) {
-      if (!votes) return;
-      const total = votes.v1 + votes.v2 + votes.v3;
-
-      document.getElementById('count-v1').textContent = votes.v1;
-      document.getElementById('count-v2').textContent = votes.v2;
-      document.getElementById('count-v3').textContent = votes.v3;
-
-      if (total > 0) {
-        const p1 = Math.round(100 * votes.v1 / total);
-        const p2 = Math.round(100 * votes.v2 / total);
-        const p3 = 100 - p1 - p2;
-        document.getElementById('bar-v1').style.width = Math.max(p1, 2) + '%';
-        document.getElementById('bar-v2').style.width = Math.max(p2, 2) + '%';
-        document.getElementById('bar-v3').style.width = Math.max(p3, 2) + '%';
-        document.getElementById('bar-v1').textContent = p1 > 10 ? `V1 ${p1}%` : '';
-        document.getElementById('bar-v2').textContent = p2 > 10 ? `V2 ${p2}%` : '';
-        document.getElementById('bar-v3').textContent = p3 > 10 ? `V3 ${p3}%` : '';
-        document.getElementById('vote-total').textContent = `${total} vote${total !== 1 ? 's' : ''} — click 👍 on the GitHub issue to vote!`;
-      } else {
-        document.getElementById('vote-total').textContent = 'No votes yet — click a Vote button and react with 👍!';
-      }
-    }
-
-    async function pollVotes() {
-      const votes = await fetchVotes();
-      updateUI(votes);
-    }
-
-    pollVotes();
-    setInterval(pollVotes, 10000);
-  </script>
 </body>
 </html>
