@@ -48,7 +48,7 @@ See `assets/README.md` in each version for details.
 
 ## The story in brief
 
-1. Ordered SO101 kit. Defective part. Wrong motors. Firmware update: Windows only.
+1. Ordered SO101 kit. Defective part. Motors on mismatched firmware. Firmware update tool: Windows only.
 2. Set up LeRobot on Fedora + Wayland. pynput doesn't work. Wrote stdin alternative.
 3. Trained ACT policy. Loss looks great (0.08). Robot misses by 6-7cm. Every time.
 4. Tried Pi0.5 (3B params). Same result. Tried SmolVLA. Same.

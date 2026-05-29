@@ -61,7 +61,7 @@ Brief explainer. LeRobot is from Hugging Face — open source, active community,
 Quick hits. Don't dwell — the audience gets it fast.
 
 - Defective servos: 2 out of 12 DOA. Replacement lead time measured in weeks.
-- Wrong motors: STS3215 instead of STS3250. Different calibration. Subtle failures.
+- Mismatched motor firmware: some servos shipped on different firmware versions. Motors on different firmware don't work together. Subtle failures until you flash them all to the same version.
 - Firmware tool: Windows-only. "I had to find a Windows machine. In 2026."
 - Assembly time: 3x the estimate. Always.
 

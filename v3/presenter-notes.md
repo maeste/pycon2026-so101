@@ -57,7 +57,7 @@
 ### Slide 3 — Day 1: The Unboxing
 
 - Describe the physical experience: box arrives, parts everywhere
-- Specific details sell the story: the warped 3D-printed piece, the wrong motor model
+- Specific details sell the story: the warped 3D-printed piece, the mismatched motor firmware versions
 - The Windows-only firmware tool on Fedora is a laugh line — lean into it
 - "I briefly considered installing Windows. That's how desperate I was."
 - **Emotional beat**: Mild concern, humor
