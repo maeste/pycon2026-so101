@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Curves — PyCon SO101</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0a0a14; --surface: #12121f; --border: #1e1e3a;
+  --text: #e2e8f0; --text-muted: #94a3b8;
+  --primary: #4f8cff; --secondary: #a855f7;
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); padding:2rem; }
+h1 { font-size:2rem; font-weight:900; background:linear-gradient(135deg,var(--primary),var(--secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.5rem; }
+.sub { color:var(--text-muted); margin-bottom:2rem; }
+.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem 2rem; margin-bottom:2rem; max-width:900px; }
+.chart-card h2 { font-size:1.3rem; margin-bottom:0.3rem; color:var(--text); }
+.chart-card .note { color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem; }
+.chart-wrap { position:relative; height:340px; }
+.callout { background:rgba(239,68,68,0.1); border-left:4px solid var(--danger); padding:1rem 1.2rem; border-radius:6px; margin-top:1rem; font-size:0.95rem; }
+.callout strong { color:var(--danger); }
+.callout-good { background:rgba(34,197,94,0.1); border-left-color:var(--success); }
+.callout-good strong { color:var(--success); }
+.metric-row { display:flex; gap:2rem; margin-top:1rem; flex-wrap:wrap; }
+.metric { text-align:center; }
+.metric .v { font-family:'JetBrains Mono',monospace; font-size:1.8rem; font-weight:700; }
+.metric .l { font-size:0.8rem; color:var(--text-muted); }
+.tip { color:var(--text-muted); font-size:0.85rem; margin-top:1rem; font-style:italic; }
+</style>
+</head>
+<body>
+  <h1>Training Curves</h1>
+  <p class="sub">Parsed from training logs &middot; styled for the talk &middot; screenshot these or embed directly</p>
+
+  <div class="chart-card">
+    <h2>1. Loss converges &mdash; training looks healthy</h2>
+    <p class="note">train/loss over steps. Smooth descent to a plateau = the model learned the demos.</p>
+    <div class="chart-wrap"><canvas id="chartConverge"></canvas></div>
+    <div class="callout callout-good">
+      <strong>What you'd conclude:</strong> "Training worked. Loss is low (~0.08). Ship it."
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2>2. Low loss &mdash; but the robot misses every time</h2>
+    <p class="note">Same healthy curve. The robot still missed the block by 6-7cm. Systematically.</p>
+    <div class="chart-wrap"><canvas id="chartTrap"></canvas></div>
+    <div class="metric-row">
+      <div class="metric"><div class="v" style="color:var(--success)">0.078</div><div class="l">final loss (looks great)</div></div>
+      <div class="metric"><div class="v" style="color:var(--danger)">6-7cm</div><div class="l">physical miss</div></div>
+      <div class="metric"><div class="v" style="color:var(--danger)">0%</div><div class="l">grasp success</div></div>
+    </div>
+    <div class="callout">
+      <strong>The trap:</strong> l1_loss = 0.068 &rarr; ~6.8% of motion range &rarr; ~12&deg; per joint &rarr; ~6-7cm at the gripper. A "good" loss can still mean total failure if calibration is wrong. <strong>The loss curve lies.</strong>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h2>3. Same code, same loss &mdash; calibration changes everything</h2>
+    <p class="note">Runs before and after fixing the 17.5&deg; wrist_flex drift. Loss curves land in the same place. Success rate: night and day.</p>
+    <div class="chart-wrap"><canvas id="chartCalib"></canvas></div>
+    <div class="metric-row">
+      <div class="metric"><div class="v" style="color:var(--danger)">0%</div><div class="l">before re-calibration</div></div>
+      <div class="metric"><div class="v" style="color:var(--success)">80%</div><div class="l">after re-calibration</div></div>
+      <div class="metric"><div class="v" style="color:var(--text-muted)">~0.08</div><div class="l">loss (both)</div></div>
+    </div>
+    <div class="callout callout-good">
+      <strong>The lesson:</strong> The fix wasn't in the model or the loss. It was 17.5&deg; of physical calibration drift. Diagnostics &gt; bigger models.
+    </div>
+  </div>
+
+  <p class="tip">Tip: open in browser, screenshot each card for slides, or copy a &lt;canvas&gt; block (Chart.js is CDN-loaded).</p>
+
+<script>
+const DATA = {"act_v6": {"label": "v6 (pre-rotation)", "points": [{"step": 200, "loss": 6.957, "grad": 155.807}, {"step": 400, "loss": 3.017, "grad": 86.644}, {"step": 600, "loss": 2.527, "grad": 76.147}, {"step": 800, "loss": 2.277, "grad": 70.056}, {"step": 1000, "loss": 2.024, "grad": 64.73}, {"step": 1200, "loss": 1.865, "grad": 61.874}, {"step": 1400, "loss": 1.684, "grad": 57.508}, {"step": 1600, "loss": 1.521, "grad": 55.106}, {"step": 1800, "loss": 1.375, "grad": 53.534}, {"step": 2000, "loss": 1.27, "grad": 51.393}, {"step": 2200, "loss": 1.146, "grad": 48.965}, {"step": 2400, "loss": 1.046, "grad": 45.885}, {"step": 2600, "loss": 0.96, "grad": 44.16}, {"step": 2800, "loss": 0.863, "grad": 42.025}, {"step": 3000, "loss": 0.797, "grad": 39.756}, {"step": 3200, "loss": 0.73, "grad": 38.266}, {"step": 3400, "loss": 0.661, "grad": 35.904}, {"step": 3600, "loss": 0.609, "grad": 33.876}, {"step": 3800, "loss": 0.573, "grad": 33.931}, {"step": 4000, "loss": 0.526, "grad": 31.493}, {"step": 4200, "loss": 0.492, "grad": 30.408}, {"step": 4400, "loss": 0.459, "grad": 28.979}, {"step": 4600, "loss": 0.428, "grad": 27.692}, {"step": 4800, "loss": 0.404, "grad": 27.002}, {"step": 5000, "loss": 0.381, "grad": 26.07}, {"step": 5200, "loss": 0.368, "grad": 25.511}, {"step": 5400, "loss": 0.347, "grad": 24.886}, {"step": 5600, "loss": 0.329, "grad": 23.744}, {"step": 5800, "loss": 0.32, "grad": 23.37}, {"step": 6000, "loss": 0.308, "grad": 22.475}, {"step": 6200, "loss": 0.295, "grad": 21.768}, {"step": 6400, "loss": 0.282, "grad": 21.371}, {"step": 6600, "loss": 0.277, "grad": 21.507}, {"step": 6800, "loss": 0.268, "grad": 20.872}, {"step": 7000, "loss": 0.26, "grad": 19.969}, {"step": 7200, "loss": 0.253, "grad": 20.039}, {"step": 7400, "loss": 0.244, "grad": 19.732}, {"step": 7600, "loss": 0.242, "grad": 19.287}, {"step": 7800, "loss": 0.234, "grad": 18.933}, {"step": 8000, "loss": 0.227, "grad": 18.454}, {"step": 8200, "loss": 0.223, "grad": 18.317}, {"step": 8400, "loss": 0.219, "grad": 18.079}, {"step": 8600, "loss": 0.218, "grad": 18.29}, {"step": 8800, "loss": 0.211, "grad": 17.603}, {"step": 9000, "loss": 0.21, "grad": 17.694}, {"step": 9200, "loss": 0.207, "grad": 17.544}, {"step": 9400, "loss": 0.204, "grad": 17.102}, {"step": 9600, "loss": 0.202, "grad": 17.166}, {"step": 9800, "loss": 0.198, "grad": 16.548}, {"step": 10000, "loss": 0.195, "grad": 16.63}, {"step": 10200, "loss": 0.19, "grad": 16.241}, {"step": 10400, "loss": 0.188, "grad": 16.387}, {"step": 10600, "loss": 0.186, "grad": 15.867}, {"step": 10800, "loss": 0.181, "grad": 15.802}, {"step": 11000, "loss": 0.178, "grad": 15.475}, {"step": 11200, "loss": 0.178, "grad": 15.307}, {"step": 11400, "loss": 0.173, "grad": 14.988}, {"step": 11600, "loss": 0.17, "grad": 15.021}, {"step": 11800, "loss": 0.171, "grad": 14.793}, {"step": 12000, "loss": 0.169, "grad": 15.165}, {"step": 12200, "loss": 0.165, "grad": 14.771}, {"step": 12400, "loss": 0.164, "grad": 14.177}, {"step": 12600, "loss": 0.165, "grad": 14.549}, {"step": 12800, "loss": 0.16, "grad": 14.218}, {"step": 13000, "loss": 0.157, "grad": 13.987}, {"step": 13200, "loss": 0.16, "grad": 14.085}, {"step": 13400, "loss": 0.154, "grad": 13.976}, {"step": 13600, "loss": 0.158, "grad": 14.189}, {"step": 13800, "loss": 0.156, "grad": 13.833}, {"step": 14000, "loss": 0.15, "grad": 13.514}, {"step": 14200, "loss": 0.15, "grad": 13.654}, {"step": 14400, "loss": 0.148, "grad": 13.542}, {"step": 14600, "loss": 0.146, "grad": 13.271}, {"step": 14800, "loss": 0.147, "grad": 12.948}, {"step": 15000, "loss": 0.144, "grad": 12.681}, {"step": 15200, "loss": 0.141, "grad": 12.681}, {"step": 15400, "loss": 0.142, "grad": 12.934}, {"step": 15600, "loss": 0.14, "grad": 12.714}, {"step": 15800, "loss": 0.141, "grad": 12.869}, {"step": 16000, "loss": 0.14, "grad": 12.831}, {"step": 16200, "loss": 0.14, "grad": 12.748}, {"step": 16400, "loss": 0.137, "grad": 12.267}, {"step": 16600, "loss": 0.135, "grad": 12.003}, {"step": 16800, "loss": 0.133, "grad": 12.385}, {"step": 17000, "loss": 0.133, "grad": 11.948}, {"step": 17200, "loss": 0.13, "grad": 11.609}, {"step": 17400, "loss": 0.134, "grad": 11.995}, {"step": 17600, "loss": 0.126, "grad": 11.504}, {"step": 17800, "loss": 0.128, "grad": 11.361}, {"step": 18000, "loss": 0.126, "grad": 11.467}, {"step": 18200, "loss": 0.124, "grad": 11.416}, {"step": 18400, "loss": 0.124, "grad": 11.441}, {"step": 18600, "loss": 0.124, "grad": 11.159}, {"step": 18800, "loss": 0.125, "grad": 11.578}, {"step": 19000, "loss": 0.121, "grad": 11.269}, {"step": 19200, "loss": 0.124, "grad": 11.609}, {"step": 19400, "loss": 0.12, "grad": 10.933}, {"step": 19600, "loss": 0.12, "grad": 11.084}, {"step": 19800, "loss": 0.119, "grad": 11.26}, {"step": 20000, "loss": 0.119, "grad": 11.243}, {"step": 20200, "loss": 0.119, "grad": 10.982}, {"step": 20400, "loss": 0.115, "grad": 10.921}, {"step": 20600, "loss": 0.115, "grad": 10.804}, {"step": 20800, "loss": 0.115, "grad": 10.622}, {"step": 21000, "loss": 0.114, "grad": 10.382}, {"step": 21200, "loss": 0.112, "grad": 10.575}, {"step": 21400, "loss": 0.111, "grad": 10.47}, {"step": 21600, "loss": 0.11, "grad": 10.476}, {"step": 21800, "loss": 0.112, "grad": 10.384}, {"step": 22000, "loss": 0.11, "grad": 10.373}, {"step": 22200, "loss": 0.108, "grad": 9.895}, {"step": 22400, "loss": 0.109, "grad": 10.212}, {"step": 22600, "loss": 0.11, "grad": 10.118}, {"step": 22800, "loss": 0.112, "grad": 10.232}, {"step": 23000, "loss": 0.109, "grad": 9.865}, {"step": 23200, "loss": 0.108, "grad": 10.329}, {"step": 23400, "loss": 0.107, "grad": 10.45}, {"step": 23600, "loss": 0.106, "grad": 9.782}, {"step": 23800, "loss": 0.104, "grad": 9.792}, {"step": 24000, "loss": 0.107, "grad": 9.604}, {"step": 24200, "loss": 0.103, "grad": 9.772}, {"step": 24400, "loss": 0.103, "grad": 9.717}, {"step": 24600, "loss": 0.103, "grad": 9.701}, {"step": 24800, "loss": 0.101, "grad": 9.835}, {"step": 25000, "loss": 0.101, "grad": 9.283}, {"step": 25200, "loss": 0.101, "grad": 9.373}, {"step": 25400, "loss": 0.101, "grad": 9.048}, {"step": 25600, "loss": 0.098, "grad": 9.094}, {"step": 25800, "loss": 0.099, "grad": 9.317}, {"step": 26000, "loss": 0.101, "grad": 9.222}, {"step": 26200, "loss": 0.1, "grad": 9.336}, {"step": 26400, "loss": 0.097, "grad": 9.353}, {"step": 26600, "loss": 0.098, "grad": 9.195}, {"step": 26800, "loss": 0.097, "grad": 8.85}, {"step": 27000, "loss": 0.097, "grad": 9.038}, {"step": 27200, "loss": 0.098, "grad": 9.037}, {"step": 27400, "loss": 0.096, "grad": 9.043}, {"step": 27600, "loss": 0.094, "grad": 8.421}, {"step": 27800, "loss": 0.096, "grad": 9.092}, {"step": 28000, "loss": 0.096, "grad": 8.832}, {"step": 28200, "loss": 0.094, "grad": 8.84}, {"step": 28400, "loss": 0.093, "grad": 8.987}, {"step": 28600, "loss": 0.092, "grad": 8.669}, {"step": 28800, "loss": 0.095, "grad": 9.132}, {"step": 29000, "loss": 0.095, "grad": 8.816}, {"step": 29200, "loss": 0.093, "grad": 8.628}, {"step": 29400, "loss": 0.093, "grad": 8.665}, {"step": 29600, "loss": 0.092, "grad": 8.727}, {"step": 29800, "loss": 0.091, "grad": 8.536}, {"step": 30000, "loss": 0.093, "grad": 8.542}, {"step": 30200, "loss": 0.091, "grad": 8.368}, {"step": 30400, "loss": 0.09, "grad": 8.342}, {"step": 30600, "loss": 0.09, "grad": 8.079}, {"step": 30800, "loss": 0.091, "grad": 8.459}, {"step": 31000, "loss": 0.095, "grad": 8.831}, {"step": 31200, "loss": 0.091, "grad": 8.549}, {"step": 31400, "loss": 0.089, "grad": 8.354}, {"step": 31600, "loss": 0.089, "grad": 8.287}, {"step": 31800, "loss": 0.088, "grad": 8.163}, {"step": 32000, "loss": 0.089, "grad": 8.329}, {"step": 32200, "loss": 0.087, "grad": 7.954}, {"step": 32400, "loss": 0.085, "grad": 7.953}, {"step": 32600, "loss": 0.087, "grad": 7.905}, {"step": 32800, "loss": 0.085, "grad": 7.762}, {"step": 33000, "loss": 0.086, "grad": 7.913}, {"step": 33200, "loss": 0.086, "grad": 8.083}, {"step": 33400, "loss": 0.087, "grad": 8.197}, {"step": 33600, "loss": 0.088, "grad": 8.057}, {"step": 33800, "loss": 0.087, "grad": 8.182}, {"step": 34000, "loss": 0.086, "grad": 7.918}, {"step": 34200, "loss": 0.085, "grad": 8.067}, {"step": 34400, "loss": 0.085, "grad": 7.841}, {"step": 34600, "loss": 0.088, "grad": 8.03}, {"step": 34800, "loss": 0.085, "grad": 7.626}, {"step": 35000, "loss": 0.084, "grad": 7.692}, {"step": 35200, "loss": 0.083, "grad": 7.854}, {"step": 35400, "loss": 0.084, "grad": 8.085}, {"step": 35600, "loss": 0.084, "grad": 8.13}, {"step": 35800, "loss": 0.082, "grad": 7.8}, {"step": 36000, "loss": 0.081, "grad": 7.397}, {"step": 36200, "loss": 0.084, "grad": 7.684}, {"step": 36400, "loss": 0.084, "grad": 7.654}, {"step": 36600, "loss": 0.081, "grad": 7.395}, {"step": 36800, "loss": 0.083, "grad": 7.706}, {"step": 37000, "loss": 0.082, "grad": 7.535}, {"step": 37200, "loss": 0.081, "grad": 7.349}, {"step": 37400, "loss": 0.079, "grad": 7.245}, {"step": 37600, "loss": 0.08, "grad": 7.525}, {"step": 37800, "loss": 0.08, "grad": 7.216}, {"step": 38000, "loss": 0.082, "grad": 7.557}, {"step": 38200, "loss": 0.081, "grad": 7.477}, {"step": 38400, "loss": 0.08, "grad": 7.201}, {"step": 38600, "loss": 0.078, "grad": 7.253}, {"step": 38800, "loss": 0.08, "grad": 7.638}, {"step": 39000, "loss": 0.08, "grad": 7.259}, {"step": 39200, "loss": 0.08, "grad": 7.444}, {"step": 39400, "loss": 0.078, "grad": 7.085}, {"step": 39600, "loss": 0.078, "grad": 6.983}, {"step": 39800, "loss": 0.078, "grad": 7.052}, {"step": 40000, "loss": 0.078, "grad": 7.368}]}, "act_v6_rotation": {"label": "v6 + rotation", "points": [{"step": 200, "loss": 0.163, "grad": 7.28}, {"step": 400, "loss": 0.135, "grad": 7.003}, {"step": 600, "loss": 0.126, "grad": 7.064}, {"step": 800, "loss": 0.116, "grad": 7.17}, {"step": 1000, "loss": 0.112, "grad": 6.864}, {"step": 1200, "loss": 0.11, "grad": 6.976}, {"step": 1400, "loss": 0.107, "grad": 7.215}, {"step": 1600, "loss": 0.105, "grad": 6.854}, {"step": 1800, "loss": 0.103, "grad": 6.881}, {"step": 2000, "loss": 0.101, "grad": 7.085}, {"step": 2200, "loss": 0.103, "grad": 6.797}, {"step": 2400, "loss": 0.096, "grad": 6.522}, {"step": 2600, "loss": 0.098, "grad": 6.633}, {"step": 2800, "loss": 0.096, "grad": 6.651}, {"step": 3000, "loss": 0.096, "grad": 6.825}, {"step": 3200, "loss": 0.094, "grad": 6.822}, {"step": 3400, "loss": 0.095, "grad": 6.845}, {"step": 3600, "loss": 0.094, "grad": 6.825}, {"step": 3800, "loss": 0.095, "grad": 6.944}, {"step": 4000, "loss": 0.094, "grad": 6.9}, {"step": 4200, "loss": 0.091, "grad": 6.655}, {"step": 4400, "loss": 0.091, "grad": 6.723}, {"step": 4600, "loss": 0.091, "grad": 6.593}, {"step": 4800, "loss": 0.089, "grad": 6.37}, {"step": 5000, "loss": 0.09, "grad": 6.732}, {"step": 5200, "loss": 0.092, "grad": 6.783}, {"step": 5400, "loss": 0.086, "grad": 6.436}, {"step": 5600, "loss": 0.083, "grad": 6.139}, {"step": 5800, "loss": 0.088, "grad": 6.583}, {"step": 6000, "loss": 0.086, "grad": 6.532}, {"step": 6200, "loss": 0.086, "grad": 6.902}, {"step": 6400, "loss": 0.085, "grad": 6.472}, {"step": 6600, "loss": 0.086, "grad": 6.816}, {"step": 6800, "loss": 0.085, "grad": 6.452}, {"step": 7000, "loss": 0.084, "grad": 6.568}, {"step": 7200, "loss": 0.084, "grad": 6.417}, {"step": 7400, "loss": 0.084, "grad": 6.68}, {"step": 7600, "loss": 0.085, "grad": 6.73}, {"step": 7800, "loss": 0.084, "grad": 6.492}, {"step": 8000, "loss": 0.083, "grad": 6.574}, {"step": 8200, "loss": 0.083, "grad": 6.376}, {"step": 8400, "loss": 0.083, "grad": 6.263}, {"step": 8600, "loss": 0.084, "grad": 6.949}, {"step": 8800, "loss": 0.084, "grad": 6.568}, {"step": 9000, "loss": 0.081, "grad": 6.266}, {"step": 9200, "loss": 0.082, "grad": 6.388}, {"step": 9400, "loss": 0.083, "grad": 6.436}, {"step": 9600, "loss": 0.082, "grad": 6.613}, {"step": 9800, "loss": 0.082, "grad": 6.514}, {"step": 10000, "loss": 0.081, "grad": 6.31}, {"step": 10200, "loss": 0.081, "grad": 6.487}, {"step": 10400, "loss": 0.082, "grad": 6.539}, {"step": 10600, "loss": 0.079, "grad": 6.311}, {"step": 10800, "loss": 0.081, "grad": 6.538}, {"step": 11000, "loss": 0.08, "grad": 6.574}, {"step": 11200, "loss": 0.079, "grad": 6.179}, {"step": 11400, "loss": 0.079, "grad": 6.322}, {"step": 11600, "loss": 0.079, "grad": 6.576}, {"step": 11800, "loss": 0.079, "grad": 6.215}, {"step": 12000, "loss": 0.078, "grad": 6.624}, {"step": 12200, "loss": 0.077, "grad": 6.362}, {"step": 12400, "loss": 0.076, "grad": 6.449}, {"step": 12600, "loss": 0.076, "grad": 6.474}, {"step": 12800, "loss": 0.078, "grad": 6.206}, {"step": 13000, "loss": 0.078, "grad": 6.351}, {"step": 13200, "loss": 0.076, "grad": 6.191}, {"step": 13400, "loss": 0.075, "grad": 6.192}, {"step": 13600, "loss": 0.077, "grad": 6.205}, {"step": 13800, "loss": 0.076, "grad": 6.256}, {"step": 14000, "loss": 0.077, "grad": 6.062}, {"step": 14200, "loss": 0.076, "grad": 6.211}, {"step": 14400, "loss": 0.076, "grad": 5.99}, {"step": 14600, "loss": 0.076, "grad": 6.35}, {"step": 14800, "loss": 0.076, "grad": 6.256}, {"step": 15000, "loss": 0.075, "grad": 6.558}]}, "act_v6_robust": {"label": "v6 + augmentation", "points": [{"step": 200, "loss": 0.133, "grad": 7.228}, {"step": 400, "loss": 0.125, "grad": 7.121}, {"step": 600, "loss": 0.124, "grad": 7.277}, {"step": 800, "loss": 0.119, "grad": 6.953}, {"step": 1000, "loss": 0.12, "grad": 7.462}, {"step": 1200, "loss": 0.117, "grad": 6.975}, {"step": 1400, "loss": 0.115, "grad": 6.889}, {"step": 1600, "loss": 0.114, "grad": 6.756}, {"step": 1800, "loss": 0.112, "grad": 6.941}, {"step": 2000, "loss": 0.11, "grad": 6.668}, {"step": 2200, "loss": 0.113, "grad": 6.989}, {"step": 2400, "loss": 0.104, "grad": 6.55}, {"step": 2600, "loss": 0.111, "grad": 6.946}, {"step": 2800, "loss": 0.109, "grad": 7.004}, {"step": 3000, "loss": 0.106, "grad": 6.582}, {"step": 3200, "loss": 0.106, "grad": 6.675}, {"step": 3400, "loss": 0.105, "grad": 6.857}, {"step": 3600, "loss": 0.105, "grad": 6.716}, {"step": 3800, "loss": 0.107, "grad": 7.182}, {"step": 4000, "loss": 0.106, "grad": 6.885}, {"step": 4200, "loss": 0.105, "grad": 7.132}, {"step": 4400, "loss": 0.104, "grad": 6.618}, {"step": 4600, "loss": 0.105, "grad": 6.811}, {"step": 4800, "loss": 0.102, "grad": 6.777}, {"step": 5000, "loss": 0.104, "grad": 6.773}, {"step": 5200, "loss": 0.103, "grad": 6.724}, {"step": 5400, "loss": 0.1, "grad": 6.912}, {"step": 5600, "loss": 0.101, "grad": 6.6}, {"step": 5800, "loss": 0.101, "grad": 6.772}, {"step": 6000, "loss": 0.101, "grad": 6.641}, {"step": 6200, "loss": 0.099, "grad": 6.503}, {"step": 6400, "loss": 0.099, "grad": 6.383}, {"step": 6600, "loss": 0.099, "grad": 6.582}, {"step": 6800, "loss": 0.1, "grad": 6.642}, {"step": 7000, "loss": 0.099, "grad": 6.67}, {"step": 7200, "loss": 0.099, "grad": 6.685}, {"step": 7400, "loss": 0.097, "grad": 6.627}, {"step": 7600, "loss": 0.098, "grad": 6.624}, {"step": 7800, "loss": 0.1, "grad": 6.802}, {"step": 8000, "loss": 0.096, "grad": 6.471}, {"step": 8200, "loss": 0.097, "grad": 6.595}, {"step": 8400, "loss": 0.096, "grad": 6.327}, {"step": 8600, "loss": 0.099, "grad": 6.831}, {"step": 8800, "loss": 0.097, "grad": 6.653}, {"step": 9000, "loss": 0.098, "grad": 6.336}, {"step": 9200, "loss": 0.098, "grad": 6.581}, {"step": 9400, "loss": 0.097, "grad": 6.561}, {"step": 9600, "loss": 0.096, "grad": 6.464}, {"step": 9800, "loss": 0.095, "grad": 6.394}, {"step": 10000, "loss": 0.095, "grad": 6.776}]}};
+const gridColor = 'rgba(148,163,184,0.12)';
+const tickColor = '#94a3b8';
+Chart.defaults.color = tickColor;
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+function baseOpts(yLabel, opts={}) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ font:{size:13} } } },
+    scales:{
+      x:{ title:{display:true,text:'training steps',color:tickColor}, grid:{color:gridColor} },
+      y:Object.assign({ title:{display:true,text:yLabel,color:tickColor}, grid:{color:gridColor} }, opts.y||{})
+    }
+  };
+}
+
+const main = DATA['act_v6'] || Object.values(DATA)[0];
+const mainPts = main ? main.points : [];
+
+if (document.getElementById('chartConverge') && mainPts.length) {
+  new Chart(document.getElementById('chartConverge'), {
+    type:'line',
+    data:{ datasets:[{
+      label:'train/loss',
+      data: mainPts.map(p=>({x:p.step,y:p.loss})),
+      borderColor:'#4f8cff', backgroundColor:'rgba(79,140,255,0.1)',
+      borderWidth:2, pointRadius:0, tension:0.3, fill:true
+    }]},
+    options: baseOpts('loss')
+  });
+}
+
+// Chart 2: same curve, zoomed to show the plateau "looks great" region
+if (document.getElementById('chartTrap') && mainPts.length) {
+  // zoom into the converged region (skip the early spike) for dramatic "it's flat and low"
+  const tail = mainPts.filter(p=>p.step >= 4000);
+  new Chart(document.getElementById('chartTrap'), {
+    type:'line',
+    data:{ datasets:[{
+      label:'train/loss (converged region)',
+      data: tail.map(p=>({x:p.step,y:p.loss})),
+      borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.08)',
+      borderWidth:2, pointRadius:0, tension:0.3, fill:true
+    }]},
+    options: baseOpts('loss (flat & low — looks perfect!)', {y:{suggestedMin:0, suggestedMax:0.3}})
+  });
+}
+
+const COLORS = {'act_v6':'#ef4444','act_v6_rotation':'#22c55e','act_v6_robust':'#a855f7'};
+const LABELS = {'act_v6':'Before fix (0% success)','act_v6_rotation':'After fix (80% success)','act_v6_robust':'+ augmentation'};
+if (document.getElementById('chartCalib')) {
+  const datasets = Object.keys(DATA).map(job=>({
+    label: LABELS[job] || DATA[job].label,
+    data: DATA[job].points.map(p=>({x:p.step,y:p.loss})),
+    borderColor: COLORS[job] || '#4f8cff',
+    backgroundColor:'transparent',
+    borderWidth:2, pointRadius:0, tension:0.3
+  }));
+  new Chart(document.getElementById('chartCalib'), {
+    type:'line', data:{datasets}, options: baseOpts('train/loss', {y:{suggestedMax:1.0}})
+  });
+}
+</script>
+</body>
+</html>
