@@ -595,7 +595,7 @@
 </div>
 
 <!-- ========== SLIDE 4: HARDWARE JOURNEY ========== -->
-<div class="slide" data-notes="The hardware journey started with fun and ended with frustration. A defective 3D-printed shoulder part caused binding. We received the wrong motor model initially. The firmware update tool only runs on Windows, which means if you are a Linux user you need a Windows machine just for that. And then there is calibration: an unforgiving process where you must align every joint perfectly.">
+<div class="slide" data-notes="The hardware journey started with fun and ended with frustration. A defective 3D-printed shoulder part caused binding. Some motors shipped on mismatched firmware versions, and motors on different firmware don't work together. The firmware update tool only runs on Windows, which means if you are a Linux user you need a Windows machine just for that. And then there is calibration: an unforgiving process where you must align every joint perfectly.">
   <h2>Hardware Journey</h2>
   <p style="margin-bottom:1.25rem">Assembly surprises no tutorial prepares you for</p>
   <div class="card-row">
@@ -604,8 +604,8 @@
       <p>3D-printed shoulder bracket had layer adhesion failure. Caused binding under load. Reprinted with higher infill.</p>
     </div>
     <div class="card card-accent-danger">
-      <h3 style="color:var(--danger)">Wrong Motors</h3>
-      <p>Received SCS3215 instead of STS3215. Different protocol, different firmware. Had to reorder from the correct supplier.</p>
+      <h3 style="color:var(--danger)">Mismatched Firmware</h3>
+      <p>Some servos shipped on different firmware versions. Motors on mismatched firmware don't work together &mdash; every servo had to be flashed to the same version.</p>
     </div>
   </div>
   <div class="card-row">

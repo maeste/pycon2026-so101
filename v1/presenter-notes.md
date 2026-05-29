@@ -57,7 +57,7 @@ Go through each card:
 
 1. Defective 3D-printed shoulder bracket: layer adhesion failure caused binding under load. Had to reprint with higher infill percentage. If you are buying pre-printed parts, inspect every structural joint.
 
-2. Wrong motors: SCS3215 vs STS3215. Different serial protocol. If the motors do not respond to commands, check the model number physically printed on the motor housing. Not just the label on the box.
+2. Mismatched firmware: some servos shipped on different firmware versions. Motors on mismatched firmware don't work together reliably. If a joint behaves oddly, check that every servo is on the same firmware version — then flash them all to match (the tool is Windows-only, see next point).
 
 3. Firmware tool: the FD debug software for updating motor firmware only runs on Windows. If you are a Linux-only shop, you need a Windows VM or a friend with a Windows machine. This is not documented well.
 
