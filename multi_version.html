@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyCon 2026 — SO101 Robot Learning Talk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a14;
+  --surface: #12121f;
+  --border: #1e1e3a;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --primary: #4f8cff;
+  --secondary: #a855f7;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1.5rem;
+}
+h1 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.event-info {
+  color: var(--warning);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.versions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  max-width: 1100px;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  transition: transform 0.2s, border-color 0.2s;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+}
+.card h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+.card .badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+.card.v1 .badge { background: var(--primary); color: #fff; }
+.card.v2 .badge { background: var(--warning); color: #000; }
+.card.v3 .badge { background: var(--success); color: #000; }
+.card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; }
+.card ul { color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; line-height: 1.8; }
+.card .slides-count { color: var(--text-muted); font-size: 0.8rem; font-style: italic; margin-top: 1rem; }
+.poll-section {
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+.poll-embed {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.poll-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+.qr-section {
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+.qr-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.qr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+}
+.qr-img {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 1rem;
+  display: block;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+.qr-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+.qr-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+footer {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+footer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+  <h1>From LeRobot to Real Robots</h1>
+  <p class="subtitle">What they don't tell you about making a robot arm grab things</p>
+  <p class="event-info">PyCon 2026 &middot; 30-minute talk &middot; Vote for your preferred version!</p>
+
+  <div class="qr-section">
+    <h2 style="text-align:center; margin-bottom:1.5rem;">Scan to follow along</h2>
+    <div class="qr-cards">
+      <div class="qr-card">
+        <img src="assets/qr-slides.svg" alt="QR code for slides" class="qr-img">
+        <p class="qr-label">This talk</p>
+        <p class="qr-url">maeste.it/pycon2026-so101</p>
+      </div>
+      <div class="qr-card">
+        <img src="assets/qr-homepage.svg" alt="QR code for homepage" class="qr-img">
+        <p class="qr-label">Homepage</p>
+        <p class="qr-url">maeste.it</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="versions">
+    <a href="v1/index.html" class="card v1">
+      <span class="badge">V1 — Technical Deep-Dive</span>
+      <h2>Full Bug Parade</h2>
+      <p>Comprehensive technical walkthrough of every bug discovered and fixed, with detailed diagnostics.</p>
+      <ul>
+        <li>22 slides, heavy on debugging details</li>
+        <li>All 5 bugs covered in depth</li>
+        <li>Loop profiling, action chunking explained</li>
+        <li>Cyberwave closing (2 slides)</li>
+        <li>Best for: ML/robotics-savvy audiences</li>
+      </ul>
+      <p class="slides-count">~22 slides &middot; 25 min content + 5 min Q&A</p>
+    </a>
+
+    <a href="v2/index.html" class="card v2">
+      <span class="badge">V2 — Balanced + Cyberwave</span>
+      <h2>Bugs Meet Platform</h2>
+      <p>Condensed bug stories focused on the calibration "aha moment", with extended Cyberwave section showing the easier path.</p>
+      <ul>
+        <li>18 slides, streamlined bug section</li>
+        <li>3 key bugs (condensed), calibration as climax</li>
+        <li>4 slides on Cyberwave platform + SO101 tutorial</li>
+        <li>Side-by-side: local vs cloud workflow</li>
+        <li>Best for: mixed audience, product-aware</li>
+      </ul>
+      <p class="slides-count">~18 slides &middot; 25 min content + 5 min Q&A/demo</p>
+    </a>
+
+    <a href="v3/index.html" class="card v3">
+      <span class="badge">V3 — Personal Journey</span>
+      <h2>The Robotics Rollercoaster</h2>
+      <p>Narrative-driven: a software engineer's honest story of entering robotics. Less technical, more emotional and relatable.</p>
+      <ul>
+        <li>16 slides, storytelling-first</li>
+        <li>Hardware pain (defective parts, firmware, Windows)</li>
+        <li>Emotional arc: optimism → frustration → breakthrough</li>
+        <li>Cyberwave as "happy ending"</li>
+        <li>Best for: general sw engineers, PyCon vibe</li>
+      </ul>
+      <p class="slides-count">~16 slides &middot; 25 min content + 5 min Q&A</p>
+    </a>
+  </div>
+
+  <div class="poll-section">
+    <h2 style="text-align:center; margin-bottom:1rem;">Which talk do you want to hear?</h2>
+    <div class="poll-embed">
+      <iframe src="https://strawpoll.com/embed/BJnXVGKeXZv" style="width:100%; height:480px; border:none; border-radius:var(--radius);" allowfullscreen></iframe>
+    </div>
+    <p class="poll-hint">No account needed — just tap your choice!</p>
+  </div>
+
+  <footer>
+    <p>Stefano Maestri &middot; <a href="https://github.com/maeste">github.com/maeste</a></p>
+    <p>Built with love, frustration, and a 17.5&deg; calibration drift</p>
+  </footer>
+</body>
+</html>
